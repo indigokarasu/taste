@@ -29,6 +29,53 @@ Taste owns behavior-driven preference modeling and evidence-backed recommendatio
 
 Taste does not own: web research (Sift), social graph (Weave), knowledge graph (Elephas), pattern analysis (Corvus), browsing interpretation (Thread).
 
+
+## Functions
+
+### taste_ingest_signal()
+
+**Purpose:** record a consumption signal (purchase, visit, play, watch, stay)
+
+**Returns:** Operation result
+
+### taste_enrich_item()
+
+**Purpose:** optional: enrich an item with metadata from external sources
+
+**Returns:** Operation result
+
+### taste_query_recommend()
+
+**Purpose:** generate recommendations grounded in consumption history
+
+**Returns:** Operation result
+
+### taste_query_serendipity()
+
+**Purpose:** find novel but defensible cross-domain connections
+
+**Returns:** Operation result
+
+### taste_model_status()
+
+**Purpose:** return model state: signal count, domains active, staleness
+
+**Returns:** Operation result
+
+### taste_report_weekly()
+
+**Purpose:** optional: generate a weekly taste pattern summary
+
+**Returns:** Operation result
+
+### taste_journal()
+
+**Purpose:** write journal for the current run; called at end of every run
+
+**Returns:** Operation result
+
+
+
 ## Commands
 
 - `taste.ingest.signal` — record a consumption signal (purchase, visit, play, watch, stay)
