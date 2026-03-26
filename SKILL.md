@@ -1,12 +1,14 @@
 ---
 name: ocas-taste
-description: Taste: behavior-driven taste model built from real consumption signals. Use when the user wants personalized recommendations grounded in actual behavior (purchases, visits, plays, watches), cross-domain discovery, taste model status, or periodic taste reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
+source: https://github.com/indigokarasu/taste
+install: openclaw skill install https://github.com/indigokarasu/taste
+description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
 metadata: {"openclaw":{"emoji":"🎯"}}
 ---
 
 # Taste
 
-Taste turns real consumption behavior into auditable, evidence-linked discovery recommendations and serendipity connections.
+Taste builds a personalized taste model from real consumption signals — purchases, restaurant visits, music plays, movie watches, and travel stays — using temporal decay so recent behavior outweighs stale history. Every recommendation it generates names the specific prior consumption that justifies it, making the reasoning auditable rather than opaque, and serendipity queries explicitly cross domain boundaries to surface novel but defensible connections.
 
 ## When to use
 
@@ -28,53 +30,6 @@ Taste turns real consumption behavior into auditable, evidence-linked discovery 
 Taste owns behavior-driven preference modeling and evidence-backed recommendations.
 
 Taste does not own: web research (Sift), social graph (Weave), knowledge graph (Elephas), pattern analysis (Corvus), browsing interpretation (Thread).
-
-
-## Functions
-
-### taste_ingest_signal()
-
-**Purpose:** record a consumption signal (purchase, visit, play, watch, stay)
-
-**Returns:** Operation result
-
-### taste_enrich_item()
-
-**Purpose:** optional: enrich an item with metadata from external sources
-
-**Returns:** Operation result
-
-### taste_query_recommend()
-
-**Purpose:** generate recommendations grounded in consumption history
-
-**Returns:** Operation result
-
-### taste_query_serendipity()
-
-**Purpose:** find novel but defensible cross-domain connections
-
-**Returns:** Operation result
-
-### taste_model_status()
-
-**Purpose:** return model state: signal count, domains active, staleness
-
-**Returns:** Operation result
-
-### taste_report_weekly()
-
-**Purpose:** optional: generate a weekly taste pattern summary
-
-**Returns:** Operation result
-
-### taste_journal()
-
-**Purpose:** write journal for the current run; called at end of every run
-
-**Returns:** Operation result
-
-
 
 ## Commands
 
@@ -202,8 +157,9 @@ public
 
 ## Support file map
 
-File | When to read
-`references/schemas.md` | Before creating signals, items, links, or recommendations
-`references/signal_policy.md` | Before decay calculations or domain gating
-`references/recommendation_style.md` | Before generating recommendations or reports
-`references/journal.md` | Before taste.journal; at end of every run
+| File | When to read |
+|---|---|
+| `references/schemas.md` | Before creating signals, items, links, or recommendations |
+| `references/signal_policy.md` | Before decay calculations or domain gating |
+| `references/recommendation_style.md` | Before generating recommendations or reports |
+| `references/journal.md` | Before taste.journal; at end of every run |
