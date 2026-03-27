@@ -2,19 +2,21 @@
 name: ocas-taste
 source: https://github.com/indigokarasu/taste
 install: openclaw skill install https://github.com/indigokarasu/taste
-description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
+description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), scanning email and calendar for consumption data, enriching venue entities with taste-relevant attributes, exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try', 'scan my email', 'what have I been eating', 'restaurant recommendations'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
 metadata: {"openclaw":{"emoji":"🎯"}}
 ---
 
 # Taste
 
-Taste builds a personalized taste model from real consumption signals — purchases, restaurant visits, music plays, movie watches, and travel stays — using temporal decay so recent behavior outweighs stale history. Every recommendation it generates names the specific prior consumption that justifies it, making the reasoning auditable rather than opaque, and serendipity queries explicitly cross domain boundaries to surface novel but defensible connections.
+Taste builds a personalized taste model from real consumption signals — purchases, restaurant visits, food delivery orders, hotel stays, music plays, and movie watches. It scans the user's email and calendar to automatically extract these signals, enriches venue entities with taste-relevant attributes (cuisine, price point, neighborhood, vibe) via Google Maps and web search, and uses temporal decay so recent behavior outweighs stale history. Every recommendation names the specific prior consumption that justifies it, respects dietary restrictions, and only suggests places the user hasn't been.
 
 ## When to use
 
+- Scanning email and calendar for consumption signals (restaurant bookings, delivery orders, hotel stays, purchases)
 - Personalized recommendations grounded in real prior behavior
 - Cross-domain discovery based on actual taste signals
 - "What else would I like" reasoning with named evidence
+- Enriching venue/item entities with taste-relevant attributes
 - Taste model status check
 - Weekly or periodic taste pattern summary
 
@@ -27,46 +29,90 @@ Taste builds a personalized taste model from real consumption signals — purcha
 
 ## Responsibility boundary
 
-Taste owns behavior-driven preference modeling and evidence-backed recommendations.
+Taste owns behavior-driven preference modeling, consumption signal extraction from email/calendar, entity enrichment for taste profiling, and evidence-backed recommendations.
 
 Taste does not own: web research (Sift), social graph (Weave), knowledge graph (Elephas), pattern analysis (Corvus), browsing interpretation (Thread).
 
 ## Commands
 
-- `taste.ingest.signal` — record a consumption signal (purchase, visit, play, watch, stay)
-- `taste.enrich.item` — optional: enrich an item with metadata from external sources
-- `taste.query.recommend` — generate recommendations grounded in consumption history
+- `taste.scan` — scan the user's email and calendar for consumption signals; extract, deduplicate, and promote to signals; queue new items for enrichment
+- `taste.scan.report` — summarize last scan: extractions processed, signals created, cancellations, dedup matches pending review
+- `taste.ingest.signal` — manually record a consumption signal (purchase, visit, play, watch, stay)
+- `taste.enrich.item` — enrich an item with taste-relevant attributes via Google Maps lookup and web search
+- `taste.query.recommend` — generate recommendations grounded in consumption history, enriched attributes, and frequency patterns; respects dietary restrictions; only suggests new places
 - `taste.query.serendipity` — find novel but defensible cross-domain connections
-- `taste.model.status` — return model state: signal count, domains active, staleness
-- `taste.report.weekly` — optional: generate a weekly taste pattern summary
+- `taste.model.status` — return model state: signal count, domains active, enrichment coverage, staleness
+- `taste.report.weekly` — generate a weekly taste pattern summary
 - `taste.journal` — write journal for the current run; called at end of every run
 
 ## Operating invariants
 
 - Evidence-first: recommendations must reference specific consumed items
+- Discovery-only: never recommend places the user has already been (exception: seasonal menu changes)
+- Dietary safety: never recommend venues that conflict with stated dietary restrictions or preferences
 - Signal decay: older signals degrade unless reinforced
+- Frequency matters: repeat visits/orders are a strong signal and must be tracked and weighted
 - No speculative identity inference from taste signals
 - Explainability: every recommendation explains the link to prior consumption
 - First-party signals outrank enriched metadata
 - Disabled domains do not appear in recommendations
 - Confidence reflects actual evidence strength, not rhetorical certainty
+- Always use the user's email account, never the agent's account
 
-## Taste-model workflow
+## Workflows
+
+### Email/calendar scan workflow (`taste.scan`)
+
+1. Access the user's email and search for transactional messages from known services (see `references/email_extraction.md` for sender allowlist)
+2. Access the user's Google Calendar for restaurant reservations and hotel bookings
+3. For each matching message/event, extract structured data into an ExtractionRecord
+4. Classify email_type: confirmation, reminder, update, cancellation, receipt
+5. Compute dedup_key and run dedup pass (see `references/email_extraction.md`)
+6. Exclude cancelled events from promotion
+7. Promote valid, non-duplicate extractions to ConsumptionSignals
+8. Create or update ItemRecords (increment signal_count, append to visit_dates)
+9. Queue unenriched items for enrichment
+10. Persist all records
+11. Write journal
+
+### Enrichment workflow (`taste.enrich.item`)
+
+1. For items with `enriched: false`, look up the venue/item on Google Maps
+2. Extract taste-relevant attributes: cuisine, price level, neighborhood, vibe, rating (see `references/enrichment.md`)
+3. If Google Maps data is insufficient, use web search to fill gaps
+4. Update ItemRecord metadata with enriched attributes
+5. Set `enriched: true` and `enriched_at`
+6. Evaluate and create LinkRecords between items sharing attributes
+7. Persist updates
+
+### Signal ingestion workflow (`taste.ingest.signal`)
 
 1. Receive or normalize input signal
 2. Validate domain and signal structure
 3. Persist signal
-4. Optionally enrich referenced item
-5. Update item/link understanding from concrete evidence
-6. Apply signal weighting and temporal decay
-7. Answer query or generate report
-8. Ensure output includes evidence-linked explanation
-9. Persist material model updates
-10. Write journal via `taste.journal`
+4. Create or update ItemRecord
+5. Queue for enrichment if new item
+6. Write journal
+
+### Recommendation workflow (`taste.query.recommend`)
+
+1. Load all active signals, apply temporal decay (see `references/signal_policy.md`)
+2. Compute effective item strength with frequency and recency bonuses (see `references/strength_model.md`)
+3. Rank items by effective strength within each domain
+4. Identify taste patterns from enriched attributes (cuisine clusters, price preferences, neighborhood tendencies)
+5. Generate recommendations for *new* venues that match identified patterns
+6. Verify each recommendation against dietary restrictions (`config.json` → `user_preferences`)
+7. Verify each recommendation is not a place the user has visited (check signals/items)
+8. Include evidence-linked explanation citing specific consumed items and frequency
+9. Write journal
 
 ## Signal weighting and decay
 
-Signal strength and recency both matter. Config: `decay.halflife_days`. Stale signals weaken unless reinforced. Newer identical signals outweigh older ones.
+Signal strength and recency both matter. See `references/strength_model.md` for full model. Key points:
+- Config: `decay.halflife_days` (default 180)
+- Stale signals weaken unless reinforced by repeat consumption
+- Frequency bonus: +0.05 per repeat visit, capped at +0.15
+- Recency bonus: +0.05 if last signal within 30 days
 
 ## Storage layout
 
@@ -77,6 +123,7 @@ Signal strength and recency both matter. Config: `decay.halflife_days`. Stale si
   items.jsonl
   links.jsonl
   decisions.jsonl
+  extractions.jsonl
   reports/
 
 ~/openclaw/journals/ocas-taste/
@@ -84,13 +131,12 @@ Signal strength and recency both matter. Config: `decay.halflife_days`. Stale si
     {run_id}.json
 ```
 
-
 Default config.json:
 ```json
 {
   "skill_id": "ocas-taste",
-  "skill_version": "2.2.0",
-  "config_version": "1",
+  "skill_version": "3.0.0",
+  "config_version": "2",
   "created_at": "",
   "updated_at": "",
   "domains": {
@@ -102,6 +148,40 @@ Default config.json:
   "retention": {
     "days": 0,
     "max_records": 10000
+  },
+  "email_scan": {
+    "enabled": true,
+    "last_scan_timestamp": null,
+    "extraction_confidence_threshold": 0.6,
+    "auto_promote_threshold": 0.8
+  },
+  "email_sources": {
+    "doordash": { "sender_patterns": ["no-reply@doordash.com", "orders@doordash.com"], "domain": "restaurant", "source_type": "purchase" },
+    "instacart": { "sender_patterns": ["no-reply@instacart.com"], "domain": "product", "source_type": "purchase" },
+    "good_eggs": { "sender_patterns": ["*@goodeggs.com"], "domain": "product", "source_type": "purchase" },
+    "tock": { "sender_patterns": ["*@exploretock.com"], "domain": "restaurant", "source_type": "visit" },
+    "opentable": { "sender_patterns": ["*@opentable.com"], "domain": "restaurant", "source_type": "visit" },
+    "yelp": { "sender_patterns": ["no-reply@yelp.com"], "domain": "restaurant", "source_type": "visit" },
+    "amazon": { "sender_patterns": ["auto-confirm@amazon.com", "ship-confirm@amazon.com"], "domain": "product", "source_type": "purchase" },
+    "hotels": { "sender_patterns": ["*@booking.com", "*@hotels.com", "*@marriott.com", "*@hilton.com", "*@hyatt.com", "*@ihg.com", "*@airbnb.com"], "domain": "travel", "source_type": "stay" }
+  },
+  "strength": {
+    "base_purchase": 0.80,
+    "base_visit": 0.70,
+    "base_stay": 0.75,
+    "base_play": 0.60,
+    "base_watch": 0.60,
+    "base_manual": 0.60,
+    "frequency_bonus_per_visit": 0.05,
+    "frequency_bonus_cap": 0.15,
+    "recency_bonus_days": 30,
+    "recency_bonus_value": 0.05
+  },
+  "user_preferences": {
+    "dietary_restrictions": [],
+    "dietary_preferences": [],
+    "cuisine_dislikes": [],
+    "notes": ""
   }
 }
 ```
@@ -127,25 +207,43 @@ skill_okrs:
     direction: maximize
     target: 0.60
     evaluation_window: 30_runs
+  - name: email_extraction_coverage
+    metric: fraction of transactional emails successfully extracted with confidence >= threshold
+    direction: maximize
+    target: 0.90
+    evaluation_window: 30_runs
+  - name: dedup_accuracy
+    metric: fraction of dedup groupings not subsequently corrected by manual review
+    direction: maximize
+    target: 0.95
+    evaluation_window: 30_runs
+  - name: enrichment_coverage
+    metric: fraction of items with enriched = true
+    direction: maximize
+    target: 0.90
+    evaluation_window: 30_runs
 ```
 
-## Optional skill cooperation
+## Skill cooperation
 
-- Sift — item enrichment via web research
+- User's email and Google Calendar — signal extraction (user's account only, never agent's)
+- Google Maps — entity enrichment (cuisine, price level, neighborhood, vibe, rating)
+- Web search — backup enrichment when Google Maps data is insufficient
+- Sift — additional item enrichment via web research
 - Elephas — read Chronicle (read-only) for entity context
 - Thread — may use Thread signals to detect emerging taste patterns
 
 ## Journal outputs
 
-Observation Journal — all signal ingestion, query, and report runs.
+Observation Journal — all signal ingestion, scan, enrichment, query, and report runs.
 
 ## Initialization
 
 On first invocation of any Taste command, run `taste.init`:
 
 1. Create `~/openclaw/data/ocas-taste/` and subdirectories (`reports/`)
-2. Write default `config.json` with ConfigBase fields if absent
-3. Create empty JSONL files: `signals.jsonl`, `items.jsonl`, `links.jsonl`, `decisions.jsonl`
+2. Write default `config.json` with all fields if absent
+3. Create empty JSONL files: `signals.jsonl`, `items.jsonl`, `links.jsonl`, `decisions.jsonl`, `extractions.jsonl`
 4. Create `~/openclaw/journals/ocas-taste/`
 5. Log initialization as a DecisionRecord in `decisions.jsonl`
 
@@ -159,7 +257,10 @@ public
 
 | File | When to read |
 |---|---|
-| `references/schemas.md` | Before creating signals, items, links, or recommendations |
+| `references/schemas.md` | Before creating signals, items, links, extractions, or recommendations |
 | `references/signal_policy.md` | Before decay calculations or domain gating |
+| `references/strength_model.md` | Before computing signal strength or ranking items |
+| `references/email_extraction.md` | Before running taste.scan; sender allowlist and dedup rules |
+| `references/enrichment.md` | Before running taste.enrich.item; what to look up and extract per domain |
 | `references/recommendation_style.md` | Before generating recommendations or reports |
 | `references/journal.md` | Before taste.journal; at end of every run |
