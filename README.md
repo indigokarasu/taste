@@ -59,7 +59,7 @@ Taste is a recommendation engine grounded entirely in real consumption behavior 
 - New reference docs: strength_model.md, email_extraction.md, enrichment.md
 - New OKRs: email_extraction_coverage, dedup_accuracy, enrichment_coverage
 
-### v2.2.1 -- March 27, 2026
+### v3.0.1 -- March 27, 2026
 - Added `taste.update` command and midnight cron for automatic version-checked self-updates
 
 ### v2.2.0 -- March 22, 2026
