@@ -2,7 +2,7 @@
 name: ocas-taste
 source: https://github.com/indigokarasu/taste
 install: openclaw skill install https://github.com/indigokarasu/taste
-description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), scanning email and calendar for consumption data, enriching venue entities with taste-relevant attributes, exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try', 'scan my email', 'what have I been eating', 'restaurant recommendations'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
+description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), scanning email and calendar for consumption data, enriching venue entities with taste-relevant attributes, exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try', 'scan my email', 'what have I been eating', 'restaurant recommendations', 'update taste'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
 metadata: {"openclaw":{"emoji":"🎯"}}
 ---
 
