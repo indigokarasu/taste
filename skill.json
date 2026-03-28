@@ -13,5 +13,23 @@
       "~/openclaw/data/ocas-taste/",
       "~/openclaw/journals/ocas-taste/"
     ]
-  }
+  },
+  "self_update": {
+    "source": "https://github.com/indigokarasu/taste",
+    "mechanism": "version-checked tarball from GitHub via gh CLI",
+    "command": "taste.update",
+    "requires_binaries": [
+      "gh",
+      "tar",
+      "python3"
+    ]
+  },
+  "scheduled_tasks": [
+    {
+      "name": "taste:update",
+      "schedule": "0 0 * * *",
+      "command": "taste.update",
+      "description": "Self-update from GitHub source"
+    }
+  ]
 }
