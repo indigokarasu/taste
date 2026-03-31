@@ -235,9 +235,8 @@ skill_okrs:
     evaluation_window: 30_runs
 ```
 
-## Skill cooperation
+## Optional skill cooperation
 
-- User's email and Google Calendar — signal extraction (user's account only, never agent's)
 - Google Maps — entity enrichment (cuisine, price level, neighborhood, vibe, rating)
 - Web search — backup enrichment when Google Maps data is insufficient
 - Sift — additional item enrichment via web research
