@@ -33,6 +33,16 @@ Taste owns behavior-driven preference modeling, consumption signal extraction fr
 
 Taste does not own: web research (Sift), social graph (Weave), knowledge graph (Elephas), pattern analysis (Corvus), browsing interpretation (Thread).
 
+## Ontology types
+
+Taste works with these types from `spec-ocas-ontology.md`:
+
+- **Place** — venues (restaurants, cafes, bars, retail, entertainment spaces). Extracted from consumption events; enriched via Google Maps or Sift.
+- **Thing/DigitalArtifact** — consumed media items (articles, videos, podcasts, books, albums). Stored as ItemRecords.
+- **Concept/Action** — behavioral actions (consumed, saved, skipped, dismissed, rated). Used as signal types in ConsumptionSignal.
+
+Taste does not emit Signals to Elephas. It maintains its own preference model in `~/openclaw/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
+
 ## Commands
 
 - `taste.scan` — scan the user's email and calendar for consumption signals; extract, deduplicate, and promote to signals; queue new items for enrichment
