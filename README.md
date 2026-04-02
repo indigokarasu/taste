@@ -48,6 +48,12 @@ Taste is a recommendation engine grounded entirely in real consumption behavior 
 
 ## Changelog
 
+### v3.2.0 -- April 2, 2026
+- Structured entity observations in journal payloads (`entities_observed`, `relationships_observed`, `preferences_observed`)
+- `user_relevance` tagging on journal observations (default `user` for preference-relevant entities)
+- Elephas journal cooperation in skill cooperation section
+- Concept/Idea, Entity/Person added to ontology types
+
 ### v3.0.0 -- March 27, 2026
 - Email and calendar scanning: automatic extraction of consumption signals from transactional emails (DoorDash, Instacart, Good Eggs, Tock, OpenTable, Yelp, Amazon, hotel bookings) and Google Calendar
 - Deduplication engine: handles confirmation/reminder/cancellation chains with composite dedup keys

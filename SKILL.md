@@ -40,8 +40,10 @@ Taste works with these types from `spec-ocas-ontology.md`:
 - **Place** — venues (restaurants, cafes, bars, retail, entertainment spaces). Extracted from consumption events; enriched via Google Maps or Sift.
 - **Thing/DigitalArtifact** — consumed media items (articles, videos, podcasts, books, albums). Stored as ItemRecords.
 - **Concept/Action** — behavioral actions (consumed, saved, skipped, dismissed, rated). Used as signal types in ConsumptionSignal.
+- **Concept/Idea** — cuisines, genres, categories, and other taste dimensions.
+- **Entity/Person** — chefs, artists, creators, and other individuals the user likes or follows.
 
-Taste does not emit Signals to Elephas. It maintains its own preference model in `~/openclaw/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
+Taste maintains its own preference model in `~/openclaw/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
 
 ## Commands
 
@@ -241,11 +243,20 @@ skill_okrs:
 - Web search — backup enrichment when Google Maps data is insufficient
 - Sift — additional item enrichment via web research
 - Elephas — read Chronicle (read-only) for entity context
+- Elephas — journal entity observations consumed during Chronicle ingestion
 - Thread — may use Thread signals to detect emerging taste patterns
 
 ## Journal outputs
 
 Observation Journal — all signal ingestion, scan, enrichment, query, and report runs.
+
+When entities are encountered during a run, journals should include the following fields in `decision.payload`:
+
+- `entities_observed` — list of entities encountered (Place for restaurants and venues, Concept/Idea for cuisines and genres, Entity/Person for chefs and creators). Each entry includes type, name/identifier, and a `user_relevance` field (`user`, `agent_only`, or `unknown`).
+- `relationships_observed` — list of relationships between entities encountered during the run (e.g., chef-to-restaurant, cuisine-to-venue).
+- `preferences_observed` — list of user preferences linked to entities encountered during the run (e.g., frequency of visits, ratings, dietary notes).
+
+All entity observations must include a `user_relevance` field: `user` if the entity is directly related to the user's world, `agent_only` if encountered incidentally, `unknown` if unclear. Taste entities default to `user` since they reflect the user's actual preferences and consumption patterns.
 
 ## Initialization
 
