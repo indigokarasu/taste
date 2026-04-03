@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [3.3.0] - 2026-04-02
+
+### Added
+- `taste.sync.spotify` command — pull last 24 hours of Spotify listening history
+- `scripts/sync-spotify.py` — syncs Spotify plays to Taste as music ConsumptionSignals
+- `music/` data subdirectory for sync checkpoint storage
+- Daily scheduled task for automatic Spotify sync at midnight
+- Music domain enabled by default in config
+
+### Changed
+- SKILL.md: Added taste.sync.spotify to commands list
+- skill.json: Added taste:sync-spotify scheduled task
+- Storage layout docs: Documented music sync checkpoint location
+
 ## [3.2.0] - 2026-04-02
 
 ### Added
