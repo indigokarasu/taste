@@ -31,6 +31,12 @@
       "schedule": "0 0 * * *",
       "command": "taste.update",
       "description": "Self-update from GitHub source"
+    },
+    {
+      "name": "taste:sync-spotify",
+      "schedule": "0 0 * * *",
+      "command": "python3 scripts/sync-spotify.py",
+      "description": "Sync last 24 hours of Spotify plays to taste model"
     }
   ]
 }

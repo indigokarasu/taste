@@ -57,6 +57,7 @@ Taste maintains its own preference model in `~/openclaw/data/ocas-taste/`. See `
 - `taste.report.weekly` — generate a weekly taste pattern summary
 - `taste.journal` — write journal for the current run; called at end of every run
 - `taste.update` — pull latest from GitHub source; preserves journals and data
+- `taste.sync.spotify` — pull last 24 hours of Spotify listening history; creates/updates music ConsumptionSignals; runs daily via scheduled task
 
 ## Operating invariants
 
@@ -138,11 +139,16 @@ Signal strength and recency both matter. See `references/strength_model.md` for 
   decisions.jsonl
   extractions.jsonl
   reports/
-
+  
+~/openclaw/data/ocas-taste/music/
+  spotify_sync_checkpoint.json — last sync timestamp
+  
 ~/openclaw/journals/ocas-taste/
   YYYY-MM-DD/
     {run_id}.json
 ```
+
+Music playback history from Spotify is stored as standard ConsumptionSignal records in `signals.jsonl` with `domain: "music"` and `source: "play"`. See `scripts/sync-spotify.py` for the sync implementation.
 
 Default config.json:
 ```json
