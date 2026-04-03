@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [3.3.1] - 2026-04-02
+
+### Changed
+- Replaced `scripts/sync-spotify.py` with SKILL.md-native workflow using spotify-history skill
+- `taste.sync.spotify` scheduled task now runs as a skill command, not a Python script
+- No external script dependencies for Spotify sync
+
+### Removed
+- `scripts/sync-spotify.py` — functionality replaced by spotify-history skill integration
+
 ## [3.3.0] - 2026-04-02
 
 ### Added
