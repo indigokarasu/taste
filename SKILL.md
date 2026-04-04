@@ -334,3 +334,13 @@ public
 | `references/enrichment.md` | Before running taste.enrich.item; what to look up and extract per domain |
 | `references/recommendation_style.md` | Before generating recommendations or reports |
 | `references/journal.md` | Before taste.journal; at end of every run |
+
+## Update command
+
+This skill self-updates every 24 hours via:
+
+```bash
+openclaw taste.update
+```
+
+This pulls the latest version from GitHub and restarts the skill's background tasks if applicable.
