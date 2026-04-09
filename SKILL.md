@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.0"
+  version: "3.4.1"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
@@ -30,11 +30,11 @@ metadata:
     visibility: public
     filesystem:
       read:
-        - "$OCAS_DATA_ROOT/data/ocas-taste/"
-        - "$OCAS_DATA_ROOT/journals/ocas-taste/"
+        - "{agent_root}/commons/data/ocas-taste/"
+        - "{agent_root}/commons/journals/ocas-taste/"
       write:
-        - "$OCAS_DATA_ROOT/data/ocas-taste/"
-        - "$OCAS_DATA_ROOT/journals/ocas-taste/"
+        - "{agent_root}/commons/data/ocas-taste/"
+        - "{agent_root}/commons/journals/ocas-taste/"
     self_update:
       source: "https://github.com/indigokarasu/taste"
       mechanism: "version-checked tarball from GitHub via gh CLI"
@@ -86,7 +86,7 @@ Taste works with these types from `spec-ocas-ontology.md`:
 - **Concept/Idea** — cuisines, genres, categories, and other taste dimensions.
 - **Entity/Person** — chefs, artists, creators, and other individuals the user likes or follows.
 
-Taste maintains its own preference model in `$OCAS_DATA_ROOT/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
+Taste maintains its own preference model in `{agent_root}/commons/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
 
 ## Commands
 
@@ -174,7 +174,7 @@ Signal strength and recency both matter. See `references/strength_model.md` for 
 ## Storage layout
 
 ```
-$OCAS_DATA_ROOT/data/ocas-taste/
+{agent_root}/commons/data/ocas-taste/
   config.json
   signals.jsonl
   items.jsonl
@@ -183,10 +183,10 @@ $OCAS_DATA_ROOT/data/ocas-taste/
   extractions.jsonl
   reports/
   
-$OCAS_DATA_ROOT/data/ocas-taste/music/
+{agent_root}/commons/data/ocas-taste/music/
   spotify_sync_checkpoint.json — last sync timestamp
   
-$OCAS_DATA_ROOT/journals/ocas-taste/
+{agent_root}/commons/journals/ocas-taste/
   YYYY-MM-DD/
     {run_id}.json
 ```
@@ -324,10 +324,10 @@ All entity observations must include a `user_relevance` field: `user` if the ent
 
 On first invocation of any Taste command, run `taste.init`:
 
-1. Create `$OCAS_DATA_ROOT/data/ocas-taste/` and subdirectories (`reports/`)
+1. Create `{agent_root}/commons/data/ocas-taste/` and subdirectories (`reports/`)
 2. Write default `config.json` with all fields if absent
 3. Create empty JSONL files: `signals.jsonl`, `items.jsonl`, `links.jsonl`, `decisions.jsonl`, `extractions.jsonl`
-4. Create `$OCAS_DATA_ROOT/journals/ocas-taste/`
+4. Create `{agent_root}/commons/journals/ocas-taste/`
 5. Register cron job `taste:update` if not already present (check the platform scheduling registry first)
 6. Log initialization as a DecisionRecord in `decisions.jsonl`
 
