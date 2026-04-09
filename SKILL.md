@@ -1,9 +1,52 @@
 ---
 name: ocas-taste
-source: https://github.com/indigokarasu/taste
-install: openclaw skill install https://github.com/indigokarasu/taste
-description: Use when generating personalized recommendations grounded in real consumption signals (purchases, visits, plays, watches), scanning email and calendar for consumption data, enriching venue entities with taste-relevant attributes, exploring cross-domain discovery based on actual behavior, checking taste model status, or producing periodic taste pattern reports. Trigger phrases: 'recommend', 'what would I like', 'based on what I've liked', 'suggest something similar', 'my taste', 'what should I try', 'scan my email', 'what have I been eating', 'restaurant recommendations', 'update taste'. Do not use for generic search, editorial top-10 lists, or ad-copy generation.
-metadata: {"openclaw":{"emoji":"🎯"}}
+description: >
+  Taste: behavior-driven taste model built from real consumption signals.
+  Scans user's email and calendar for consumption data (restaurant
+  reservations, food delivery, hotel bookings, purchases), enriches entities
+  with taste-relevant attributes via Google Maps, and generates
+  discovery-focused recommendations that respect dietary restrictions. Trigger
+  phrases: 'recommend', 'what would I like', 'based on what I've liked',
+  'suggest something similar', 'my taste', 'what should I try', 'scan my
+  email', 'what have I been eating', 'restaurant recommendations', 'update
+  taste'. Do not use for generic search, editorial top-10 lists, or ad-copy
+  generation.
+metadata:
+  author: Indigo Karasu
+  email: mx.indigo.karasu@gmail.com
+  version: "3.4.0"
+  hermes:
+    tags: [preferences, recommendations, food]
+    category: preference
+    cron:
+      - name: "taste:update"
+        schedule: "0 0 * * *"
+        command: "taste.update"
+      - name: "taste:sync-spotify"
+        schedule: "0 0 * * *"
+        command: "taste.sync.spotify"
+  openclaw:
+    skill_type: system
+    visibility: public
+    filesystem:
+      read:
+        - "$OCAS_DATA_ROOT/data/ocas-taste/"
+        - "$OCAS_DATA_ROOT/journals/ocas-taste/"
+      write:
+        - "$OCAS_DATA_ROOT/data/ocas-taste/"
+        - "$OCAS_DATA_ROOT/journals/ocas-taste/"
+    self_update:
+      source: "https://github.com/indigokarasu/taste"
+      mechanism: "version-checked tarball from GitHub via gh CLI"
+      command: "taste.update"
+      requires_binaries: [gh, tar, python3]
+    cron:
+      - name: "taste:update"
+        schedule: "0 0 * * *"
+        command: "taste.update"
+      - name: "taste:sync-spotify"
+        schedule: "0 0 * * *"
+        command: "taste.sync.spotify"
 ---
 
 # Taste
@@ -43,7 +86,7 @@ Taste works with these types from `spec-ocas-ontology.md`:
 - **Concept/Idea** — cuisines, genres, categories, and other taste dimensions.
 - **Entity/Person** — chefs, artists, creators, and other individuals the user likes or follows.
 
-Taste maintains its own preference model in `~/openclaw/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
+Taste maintains its own preference model in `$OCAS_DATA_ROOT/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
 
 ## Commands
 
@@ -131,7 +174,7 @@ Signal strength and recency both matter. See `references/strength_model.md` for 
 ## Storage layout
 
 ```
-~/openclaw/data/ocas-taste/
+$OCAS_DATA_ROOT/data/ocas-taste/
   config.json
   signals.jsonl
   items.jsonl
@@ -140,10 +183,10 @@ Signal strength and recency both matter. See `references/strength_model.md` for 
   extractions.jsonl
   reports/
   
-~/openclaw/data/ocas-taste/music/
+$OCAS_DATA_ROOT/data/ocas-taste/music/
   spotify_sync_checkpoint.json — last sync timestamp
   
-~/openclaw/journals/ocas-taste/
+$OCAS_DATA_ROOT/journals/ocas-taste/
   YYYY-MM-DD/
     {run_id}.json
 ```
@@ -281,11 +324,11 @@ All entity observations must include a `user_relevance` field: `user` if the ent
 
 On first invocation of any Taste command, run `taste.init`:
 
-1. Create `~/openclaw/data/ocas-taste/` and subdirectories (`reports/`)
+1. Create `$OCAS_DATA_ROOT/data/ocas-taste/` and subdirectories (`reports/`)
 2. Write default `config.json` with all fields if absent
 3. Create empty JSONL files: `signals.jsonl`, `items.jsonl`, `links.jsonl`, `decisions.jsonl`, `extractions.jsonl`
-4. Create `~/openclaw/journals/ocas-taste/`
-5. Register cron job `taste:update` if not already present (check `openclaw cron list` first)
+4. Create `$OCAS_DATA_ROOT/journals/ocas-taste/`
+5. Register cron job `taste:update` if not already present (check the platform scheduling registry first)
 6. Log initialization as a DecisionRecord in `decisions.jsonl`
 
 ## Background tasks
@@ -295,7 +338,7 @@ On first invocation of any Taste command, run `taste.init`:
 | `taste:update` | cron | `0 0 * * *` (midnight daily) | `taste.update` |
 
 ```
-openclaw cron add --name taste:update --schedule "0 0 * * *" --command "taste.update" --sessionTarget isolated --lightContext true --timezone America/Los_Angeles
+# Task declared in SKILL.md frontmatter metadata.{platform}.cron
 ```
 
 

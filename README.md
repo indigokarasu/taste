@@ -2,6 +2,9 @@
 
 Taste builds a personalized taste model from real consumption signals -- restaurant visits, food delivery orders, hotel stays, purchases, music plays, and movie watches. It scans the user's email and calendar to automatically extract these signals, enriches venue entities with taste-relevant attributes (cuisine, price point, neighborhood, vibe) via Google Maps, and generates discovery-focused recommendations that only suggest new places and respect dietary restrictions.
 
+
+Skill packages follow the [agentskills.io](https://agentskills.io/specification) open standard and are compatible with OpenClaw, Hermes Agent, and any agentskills.io-compliant client.
+
 ---
 
 ## Overview
