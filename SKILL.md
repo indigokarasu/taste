@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.1"
+  version: "3.4.2"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
@@ -383,7 +383,7 @@ public
 This skill self-updates every 24 hours via:
 
 ```bash
-openclaw taste.update
+taste.update
 ```
 
 This pulls the latest version from GitHub and restarts the skill's background tasks if applicable.
