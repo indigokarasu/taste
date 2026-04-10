@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.2"
+  version: "3.4.3"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
@@ -347,8 +347,8 @@ On first invocation of any Taste command, run `taste.init`:
 `taste.update` pulls the latest package from the `source:` URL in this file's frontmatter. Runs silently — no output unless the version changed or an error occurred.
 
 1. Read `source:` from frontmatter → extract `{owner}/{repo}` from URL
-2. Read local version from `skill.json`
-3. Fetch remote version: `gh api "repos/{owner}/{repo}/contents/skill.json" --jq '.content' | base64 -d | python3 -c "import sys,json;print(json.load(sys.stdin)['version'])"`
+2. Read local version from SKILL.md frontmatter `metadata.version`
+3. Fetch remote version from SKILL.md frontmatter: `gh api "repos/{owner}/{repo}/contents/SKILL.md" --jq '.content' | base64 -d | grep 'version:' | head -1 | sed 's/.*"\(.*\)".*/\1/'`
 4. If remote version equals local version → stop silently
 5. Download and install:
    ```bash
