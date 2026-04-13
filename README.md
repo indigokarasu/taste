@@ -51,6 +51,9 @@ Taste is a recommendation engine grounded entirely in real consumption behavior 
 
 ## Changelog
 
+### v3.4.4 — April 12, 2026
+- Switch Spotify sync from spotify-history skill to Spotify MCP
+
 ### v3.2.0 -- April 2, 2026
 - Structured entity observations in journal payloads (`entities_observed`, `relationships_observed`, `preferences_observed`)
 - `user_relevance` tagging on journal observations (default `user` for preference-relevant entities)
