@@ -1,3 +1,10 @@
+## [3.4.4] - 2026-04-12
+
+### Changed
+- `taste.sync.spotify` now uses Spotify MCP (`@darrenjaws/spotify-mcp`) directly instead of the separate spotify-history skill
+- Deduplication key updated from track_id+timestamp to track name+artist (more robust)
+- Spotify MCP environment variables must be in MCP server config, not just shell environment
+
 ## [2026-04-04] Spec Compliance Update
 
 ### Changes
