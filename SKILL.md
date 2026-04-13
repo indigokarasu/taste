@@ -14,39 +14,39 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.3"
+  version: \"3.6.0\"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
     cron:
-      - name: "taste:update"
-        schedule: "0 0 * * *"
-        command: "taste.update"
-      - name: "taste:sync-spotify"
-        schedule: "0 0 * * *"
-        command: "taste.sync.spotify"
+      - name: \"taste:scan\"
+        schedule: \"0 6 * * *\"
+        command: \"cd /root/.hermes/commons/data/ocas-taste && source venv/bin/activate && python3 scripts/taste_scan.py\"
+      - name: \"taste:sync-spotify\"
+        schedule: \"0 0 * * *\"
+        command: \"cd /root/.hermes/commons/data/ocas-taste && source venv/bin/activate && python3 scripts/spotify_mcp_sync.py\"
   openclaw:
     skill_type: system
     visibility: public
     filesystem:
       read:
-        - "{agent_root}/commons/data/ocas-taste/"
-        - "{agent_root}/commons/journals/ocas-taste/"
+        - \"{agent_root}/commons/data/ocas-taste/\"
+        - \"{agent_root}/commons/journals/ocas-taste/\"
       write:
-        - "{agent_root}/commons/data/ocas-taste/"
-        - "{agent_root}/commons/journals/ocas-taste/"
+        - \"{agent_root}/commons/data/ocas-taste/\"
+        - \"{agent_root}/commons/journals/ocas-taste/\"
     self_update:
-      source: "https://github.com/indigokarasu/taste"
-      mechanism: "version-checked tarball from GitHub via gh CLI"
-      command: "taste.update"
+      source: \"https://github.com/indigokarasu/taste\"
+      mechanism: \"version-checked tarball from GitHub via gh CLI\"
+      command: \"taste.update\"
       requires_binaries: [gh, tar, python3]
     cron:
-      - name: "taste:update"
-        schedule: "0 0 * * *"
-        command: "taste.update"
-      - name: "taste:sync-spotify"
-        schedule: "0 0 * * *"
-        command: "taste.sync.spotify"
+      - name: \"taste:scan\"
+        schedule: \"0 6 * * *\"
+        command: \"cd /root/.hermes/commons/data/ocas-taste && source venv/bin/activate && python3 scripts/taste_scan.py\"
+      - name: \"taste:sync-spotify\"
+        schedule: \"0 0 * * *\"
+        command: \"cd /root/.hermes/commons/data/ocas-taste && source venv/bin/activate && python3 scripts/spotify_mcp_sync.py\"
 ---
 
 # Taste
@@ -58,7 +58,7 @@ Taste builds a personalized taste model from real consumption signals — purcha
 - Scanning email and calendar for consumption signals (restaurant bookings, delivery orders, hotel stays, purchases)
 - Personalized recommendations grounded in real prior behavior
 - Cross-domain discovery based on actual taste signals
-- "What else would I like" reasoning with named evidence
+- \"What else would I like\" reasoning with named evidence
 - Enriching venue/item entities with taste-relevant attributes
 - Taste model status check
 - Weekly or periodic taste pattern summary
@@ -100,7 +100,7 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 - `taste.report.weekly` — generate a weekly taste pattern summary
 - `taste.journal` — write journal for the current run; called at end of every run
 - `taste.update` — pull latest from GitHub source; preserves journals and data
-- `taste.sync.spotify` — pull recent Spotify listening history via spotify-history skill; creates/updates music ConsumptionSignals; runs daily via scheduled task
+- `taste.sync.spotify` — pull recent Spotify listening history via Spotify MCP; creates/updates music ConsumptionSignals; runs daily via scheduled task
 
 ## Operating invariants
 
@@ -163,6 +163,58 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 8. Include evidence-linked explanation citing specific consumed items and frequency
 9. Write journal
 
+### taste.sync.spotify workflow
+
+1. Call Spotify MCP server tools via `hermes mcp call spotify get_recently_played` and `get_top_items`
+2. Parse MCP output to extract track names and artists
+3. For each track: create a ConsumptionSignal with `domain: \"music\"`, `source: \"play\"`, `strength: 0.60`
+4. For each track: create or update an ItemRecord with play counts and visit_dates
+5. Deduplicate by track name + artist against existing signals
+6. Write new signals to `signals.jsonl` and items to `items.jsonl`
+7. Update `music/spotify_sync_checkpoint.json` with last sync timestamp
+8. Write journal with entity observations for Elephas ingestion
+
+**Prerequisites**:
+- Spotify MCP server installed: `@darrenjaws/spotify-mcp`
+- MCP config at `~/.hermes/mcp/spotify-mcp.json`
+- Environment variables: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
+- Run setup wizard: `npx @darrenjaws/spotify-mcp setup`
+
+**Implementation**:
+- Script: `scripts/spotify_mcp_sync.py`
+- Uses subprocess to call `hermes mcp call spotify {tool_name}`
+- Parses text output from MCP tools
+
+## Engineering Reference (Implementation Details)
+
+### Google API Scope Matching
+When initializing Google services, avoid `invalid_scope` errors by matching authorized scopes precisely:
+- Use `https://www.googleapis.com/auth/gmail.modify` instead of `gmail.readonly`
+- Use `https://www.googleapis.com/auth/calendar` instead of `calendar.readonly`
+
+### Spotify MCP Configuration
+Environment variables for the Spotify MCP server must be defined in `~/.hermes/config.yaml` under `mcp_servers.spotify.env`, not just the shell environment:
+```yaml
+mcp_servers:
+  spotify:
+    command: npx
+    args: ["@darrenjaws/spotify-mcp"]
+    env:
+      SPOTIFY_CLIENT_ID: \"...\"
+      SPOTIFY_CLIENT_SECRET: \"...\"
+      SPOTIFY_REDIRECT_URI: \"http://localhost:8888/callback\"
+```
+
+### Email Scanning Implementation
+- **Extraction Patterns**:
+  - DoorDash: Venue from subject, total from body.
+  - Instacart: Store name from subject.
+  - Reservations (Tock/OpenTable/Yelp): Venue, date, party size.
+  - Amazon: Product name from subject.
+  - Hotels: Hotel name, confirmation number.
+- **Deduplication**: Use composite key `{service}:{order_id}:{date}:{normalized_venue}`. Group extractions and select the richest record (Receipt > Confirmation > Reminder).
+- **Signal Weights**: Base strength: Purchase (0.80), Visit (0.70), Play (0.60).
+
 ## Signal weighting and decay
 
 Signal strength and recency both matter. See `references/strength_model.md` for full model. Key points:
@@ -174,89 +226,74 @@ Signal strength and recency both matter. See `references/strength_model.md` for 
 ## Storage layout
 
 ```
-{agent_root}/commons/data/ocas-taste/
-  config.json
-  signals.jsonl
-  items.jsonl
-  links.jsonl
-  decisions.jsonl
-  extractions.jsonl
-  reports/
-  
-{agent_root}/commons/data/ocas-taste/music/
-  spotify_sync_checkpoint.json — last sync timestamp
-  
-{agent_root}/commons/journals/ocas-taste/
-  YYYY-MM-DD/
-    {run_id}.json
-```
+{agent_root}/commons/data/ocas-taste/\
+  config.json\
+  signals.jsonl\
+  items.jsonl\
+  links.jsonl\
+  decisions.jsonl\
+  extractions.jsonl\
+  reports/\
+  scripts/\
+    taste_scan.py\
+    email_scan.py\
+    spotify_mcp_sync.py\
+  venv/\
+  \n{agent_root}/commons/data/ocas-taste/music/\n  spotify_sync_checkpoint.json — last sync timestamp\n  \n{agent_root}/commons/journals/ocas-taste/\n  YYYY-MM-DD/\n    {run_id}.json\n```
 
-Music playback history from Spotify is stored as standard ConsumptionSignal records in `signals.jsonl` with `domain: "music"` and `source: "play"`.
-
-### taste.sync.spotify workflow
-
-1. Call spotify-history skill's `recent` command to get last 24 hours of plays
-2. Call spotify-history skill's `top-tracks short_term` for recent favorites
-3. For each track: create a ConsumptionSignal with `domain: "music"`, `source: "play"`, `strength: 0.60`
-4. For each track: create or update an ItemRecord with play counts and visit_dates
-5. Deduplicate by track_id + timestamp against existing signals
-6. Write new signals to `signals.jsonl` and items to `items.jsonl`
-7. Update `music/spotify_sync_checkpoint.json` with last sync timestamp
-8. Write journal with entity observations for Elephas ingestion
-
-No external scripts required — spotify-history provides the Spotify API access.
+Music playback history from Spotify is stored as standard ConsumptionSignal records in `signals.jsonl` with `domain: \"music\"` and `source: \"play\"`.
 
 Default config.json:
 ```json
 {
-  "skill_id": "ocas-taste",
-  "skill_version": "3.0.0",
-  "config_version": "2",
-  "created_at": "",
-  "updated_at": "",
-  "domains": {
-    "enabled": ["music", "restaurant", "book", "movie", "product", "travel", "event"]
+  \"skill_id\": \"ocas-taste\",
+  \"skill_version\": \"3.0.0\",
+  \"config_version\": \"2\",
+  \"created_at\": \"\",
+  \"updated_at\": \"\",
+  \"domains\": {
+    \"enabled\": [\"music\", \"restaurant\", \"book\", \"movie\", \"product\", \"travel\", \"event\"]
   },
-  "decay": {
-    "halflife_days": 180
+  \"decay\": {
+    \"halflife_days\": 180
   },
-  "retention": {
-    "days": 0,
-    "max_records": 10000
+  \"retention\": {
+    \"days\": 0,
+    \"max_records\": 10000
   },
-  "email_scan": {
-    "enabled": true,
-    "last_scan_timestamp": null,
-    "extraction_confidence_threshold": 0.6,
-    "auto_promote_threshold": 0.8
+  \"email_scan\": {
+    \"enabled\": true,
+    \"last_scan_timestamp\": null,
+    \"extraction_confidence_threshold\": 0.6,
+    \"auto_promote_threshold\": 0.8
   },
-  "email_sources": {
-    "doordash": { "sender_patterns": ["no-reply@doordash.com", "orders@doordash.com"], "domain": "restaurant", "source_type": "purchase" },
-    "instacart": { "sender_patterns": ["no-reply@instacart.com"], "domain": "product", "source_type": "purchase" },
-    "good_eggs": { "sender_patterns": ["*@goodeggs.com"], "domain": "product", "source_type": "purchase" },
-    "tock": { "sender_patterns": ["*@exploretock.com"], "domain": "restaurant", "source_type": "visit" },
-    "opentable": { "sender_patterns": ["*@opentable.com"], "domain": "restaurant", "source_type": "visit" },
-    "yelp": { "sender_patterns": ["no-reply@yelp.com"], "domain": "restaurant", "source_type": "visit" },
-    "amazon": { "sender_patterns": ["auto-confirm@amazon.com", "ship-confirm@amazon.com"], "domain": "product", "source_type": "purchase" },
-    "hotels": { "sender_patterns": ["*@booking.com", "*@hotels.com", "*@marriott.com", "*@hilton.com", "*@hyatt.com", "*@ihg.com", "*@airbnb.com"], "domain": "travel", "source_type": "stay" }
+  \"email_sources\": {
+    \"doordash\": { \"sender_patterns\": [\"no-reply@doordash.com\", \"orders@doordash.com\"], \"domain\": \"restaurant\", \"source_type\": \"purchase\" },
+    \"instacart\": { \"sender_patterns\": [\"no-reply@instacart.com\"], \"domain\": \"product\", \"source_type\": \"purchase\" },
+    \"good_eggs\": { \"sender_patterns\": [\"*@goodeggs.com\"], \"domain\": \"product\", \"source_type\": \"purchase\" },
+    \"tock\": { \"sender_patterns\": [\"*@exploretock.com\"], \"domain\": \"restaurant\", \"source_type\": \"visit\" },
+    \"opentable\": { \"sender_patterns\": [\"*@opentable.com\"], \"domain\": \"restaurant\", \"source_type\": \"visit\" },
+    \"yelp\": { \"sender_patterns\": [\"no-reply@yelp.com\"], \"domain\": \"restaurant\", \"source_type\": \"visit\" },
+    \"amazon\": { \"sender_patterns\": [\"auto-confirm@amazon.com\", \"ship-confirm@amazon.com\"], \"domain\": \"product\", \"source_type\": \"purchase\" },
+    \"hotels\": { \"sender_patterns\": [\"*@booking.com\", \"*@hotels.com\", \"*@marriott.com\", \"*@hilton.com\", \"*@hyatt.com\", \"*@ihg.com\", \"*@airbnb.com\"], \"domain\": \"travel\", \"source_type\": \"stay\" }
   },
-  "strength": {
-    "base_purchase": 0.80,
-    "base_visit": 0.70,
-    "base_stay": 0.75,
-    "base_play": 0.60,
-    "base_watch": 0.60,
-    "base_manual": 0.60,
-    "frequency_bonus_per_visit": 0.05,
-    "frequency_bonus_cap": 0.15,
-    "recency_bonus_days": 30,
-    "recency_bonus_value": 0.05
+  \"strength\": {
+    \"base_purchase\": 0.80,
+    \"base_visit\": 0.70,
+    \"base_stay\": 0.75,
+    \"base_play\": 0.60,
+    \"base_watch\": 0.60,
+    \"base_manual\": 0.60,
+    \"frequency_bonus_per_visit\": 0.05,
+    \"frequency_bonus_cap\": 0.15,
+    \"recency_bonus_days\": 30,
+    \"recency_bonus_value\": 0.05
   },
-  "user_preferences": {
-    "dietary_restrictions": [],
-    "dietary_preferences": [],
-    "cuisine_dislikes": [],
-    "notes": ""
+  \"user_preferences\": {
+    \"dietary_restrictions\": [],
+    \"dietary_preferences\": [],
+    \"cuisine_dislikes\": [],
+    \"notes\": \"\"
   }
 }
 ```
@@ -324,66 +361,28 @@ All entity observations must include a `user_relevance` field: `user` if the ent
 
 On first invocation of any Taste command, run `taste.init`:
 
-1. Create `{agent_root}/commons/data/ocas-taste/` and subdirectories (`reports/`)
+1. Create `{agent_root}/commons/data/ocas-taste/` and subdirectories (`reports/`, `scripts/`, `music/`)
 2. Write default `config.json` with all fields if absent
 3. Create empty JSONL files: `signals.jsonl`, `items.jsonl`, `links.jsonl`, `decisions.jsonl`, `extractions.jsonl`
-4. Create `{agent_root}/commons/journals/ocas-taste/`
-5. Register cron job `taste:update` if not already present (check the platform scheduling registry first)
-6. Log initialization as a DecisionRecord in `decisions.jsonl`
+4. Create Python virtual environment: `python3 -m venv venv`
+5. Install dependencies: `pip install spotipy google-api-python-client`
+6. Create `{agent_root}/commons/journals/ocas-taste/`
+7. Register cron jobs `taste:scan` and `taste:sync-spotify` if not already present
+8. Log initialization as a DecisionRecord in `decisions.jsonl`
 
 ## Background tasks
 
 | Job name | Mechanism | Schedule | Command |
 |---|---|---|---|
-| `taste:update` | cron | `0 0 * * *` (midnight daily) | `taste.update` |
-
-```
-# Task declared in SKILL.md frontmatter metadata.{platform}.cron
-```
-
+| `taste:scan` | cron | `0 6 * * *` (daily 6am UTC) | Email/calendar scan + Spotify sync |
+| `taste:sync-spotify` | cron | `0 0 * * *` (midnight UTC) | Spotify sync only |
 
 ## Self-update
 
 `taste.update` pulls the latest package from the `source:` URL in this file's frontmatter. Runs silently — no output unless the version changed or an error occurred.
 
 1. Read `source:` from frontmatter → extract `{owner}/{repo}` from URL
-2. Read local version from SKILL.md frontmatter `metadata.version`
-3. Fetch remote version from SKILL.md frontmatter: `gh api "repos/{owner}/{repo}/contents/SKILL.md" --jq '.content' | base64 -d | grep 'version:' | head -1 | sed 's/.*"\(.*\)".*/\1/'`
+2. Read local version from `skill.json`
+3. Fetch remote version: `gh api \"repos/{owner}/{repo}/contents/skill.json\" --jq '.content' | base64 -d | python3 -c \"import sys,json;print(json.load(sys.stdin)['version'])\"`
 4. If remote version equals local version → stop silently
-5. Download and install:
-   ```bash
-   TMPDIR=$(mktemp -d)
-   gh api "repos/{owner}/{repo}/tarball/main" > "$TMPDIR/archive.tar.gz"
-   mkdir "$TMPDIR/extracted"
-   tar xzf "$TMPDIR/archive.tar.gz" -C "$TMPDIR/extracted" --strip-components=1
-   cp -R "$TMPDIR/extracted/"* ./
-   rm -rf "$TMPDIR"
-   ```
-6. On failure → retry once. If second attempt fails, report the error and stop.
-7. Output exactly: `I updated Taste from version {old} to {new}`
-
-## Visibility
-
-public
-
-## Support file map
-
-| File | When to read |
-|---|---|
-| `references/schemas.md` | Before creating signals, items, links, extractions, or recommendations |
-| `references/signal_policy.md` | Before decay calculations or domain gating |
-| `references/strength_model.md` | Before computing signal strength or ranking items |
-| `references/email_extraction.md` | Before running taste.scan; sender allowlist and dedup rules |
-| `references/enrichment.md` | Before running taste.enrich.item; what to look up and extract per domain |
-| `references/recommendation_style.md` | Before generating recommendations or reports |
-| `references/journal.md` | Before taste.journal; at end of every run |
-
-## Update command
-
-This skill self-updates every 24 hours via:
-
-```bash
-taste.update
-```
-
-This pulls the latest version from GitHub and restarts the skill's background tasks if applicable.
+5. Download and install:\n   ```bash\n   TMPDIR=$(mktemp -d)\n   gh api \"repos/{owner}/{repo}/tarball/main\" > \"$TMPDIR/archive.tar.gz\"\n   mkdir \"$TMPDIR/extracted\"\n   tar xzf \"$TMPDIR/archive.tar.gz\" -C \"$TMPDIR/extracted\" --strip-components=1\n   cp -R \"$TMPDIR/extracted/\"* ./\n   rm -rf \"$TMPDIR\"\n   ```\n6. On failure → retry once. If second attempt fails, report the error and stop.\n7. Output exactly: `I updated Taste from version {old} to {new}`\n\n## Visibility\n\npublic\n\n## Support file map\n\n| File | When to read |\n|---|---|\n| `references/schemas.md` | Before creating signals, items, links, extractions, or recommendations |\n| `references/signal_policy.md` | Before decay calculations or domain gating |\n| `references/strength_model.md` | Before computing signal strength or ranking items |\n| `references/email_extraction.md` | Before running taste.scan; sender allowlist and dedup rules |\n| `references/enrichment.md` | Before running taste.enrich.item; what to look up and extract per domain |\n| `references/recommendation_style.md` | Before generating recommendations or reports |\n| `references/journal.md` | Before taste.journal; at end of every run |\n\n## Update command\n\nThis skill self-updates every 24 hours via:\n\n```bash\nopenclaw taste.update\n```\n\nThis pulls the latest version from GitHub and restarts the skill's background tasks if applicable.
