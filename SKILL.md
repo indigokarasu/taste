@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.3"
+  version: "3.4.4"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
@@ -100,7 +100,7 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 - `taste.report.weekly` — generate a weekly taste pattern summary
 - `taste.journal` — write journal for the current run; called at end of every run
 - `taste.update` — pull latest from GitHub source; preserves journals and data
-- `taste.sync.spotify` — pull recent Spotify listening history via spotify-history skill; creates/updates music ConsumptionSignals; runs daily via scheduled task
+- `taste.sync.spotify` — pull recent Spotify listening history via Spotify MCP; creates/updates music ConsumptionSignals; runs daily via scheduled task
 
 ## Operating invariants
 
@@ -195,16 +195,20 @@ Music playback history from Spotify is stored as standard ConsumptionSignal reco
 
 ### taste.sync.spotify workflow
 
-1. Call spotify-history skill's `recent` command to get last 24 hours of plays
-2. Call spotify-history skill's `top-tracks short_term` for recent favorites
+1. Call Spotify MCP tools: `get_recently_played` for last 24h plays, `get_top_items` for recent favorites
+2. Parse MCP output to extract track names and artists
 3. For each track: create a ConsumptionSignal with `domain: "music"`, `source: "play"`, `strength: 0.60`
 4. For each track: create or update an ItemRecord with play counts and visit_dates
-5. Deduplicate by track_id + timestamp against existing signals
+5. Deduplicate by track name + artist against existing signals
 6. Write new signals to `signals.jsonl` and items to `items.jsonl`
 7. Update `music/spotify_sync_checkpoint.json` with last sync timestamp
 8. Write journal with entity observations for Elephas ingestion
 
-No external scripts required — spotify-history provides the Spotify API access.
+**Spotify MCP prerequisites:**
+- MCP server: `@darrenjaws/spotify-mcp`
+- Environment variables: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
+- MCP config must include env vars under the spotify server entry (not just in shell env)
+- Run setup once: `npx @darrenjaws/spotify-mcp setup`
 
 Default config.json:
 ```json
