@@ -144,6 +144,81 @@ To avoid re-processing, `config.json` stores:
 
 Each scan processes messages/events newer than `last_scan_timestamp`, then updates the watermark.
 
+## Operational notes for cron runs
+
+### Google OAuth token refresh
+
+The Google token at `~/.hermes/google_token.json` expires periodically. Before scanning, check `expiry` and refresh if needed:
+
+```python
+import json, requests
+from datetime import datetime, timezone, timedelta
+
+with open(os.path.expanduser("~/.hermes/google_token.json")) as f:
+    token = json.load(f)
+
+expiry = datetime.fromisoformat(token["expiry"].replace("Z", "+00:00"))
+if datetime.now(timezone.utc) >= expiry:
+    resp = requests.post("https://oauth2.googleapis.com/token", data={
+        "client_id": token["client_id"],
+        "client_secret": token["client_secret"],
+        "refresh_token": token["refresh_token"],
+        "grant_type": "refresh_token"
+    })
+    new = resp.json()
+    token["token"] = new["access_token"]
+    token["expiry"] = (datetime.now(timezone.utc) + timedelta(seconds=new["expires_in"])).isoformat()
+    with open(os.path.expanduser("~/.hermes/google_token.json"), "w") as f:
+        json.dump(token, f, indent=2)
+```
+
+Token scopes needed: `gmail.modify` and `calendar`.
+
+### Gmail API access (when himalaya is unavailable)
+
+If `himalaya` CLI is not installed, use Gmail API directly:
+- List messages: `GET https://gmail.googleapis.com/gmail/v1/users/me/messages?q=from:no-reply@doordash.com after:{timestamp}`
+- Read message: `GET https://gmail.googleapis.com/gmail/v1/users/me/messages/{id}?format=full`
+- Headers of interest: `From`, `Subject`, `Date`; payload body for full extraction
+
+### Google Calendar API access
+
+- List events: `GET https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin={iso}&timeMax={iso}`
+- Filter with keyword hints: restaurant names, hotel names, "reservation", "flight", "dinner"
+
+### Spotify sync limitation
+
+Client credentials flow (`client_id`/`client_secret` from env vars) **cannot** access `/me/player/recently-played` or `/me/top/tracks`. These require a user-authorized OAuth token with `user-read-recently-played` scope. If no user OAuth token exists in `~/.hermes/`, Spotify sync must be skipped and flagged in the journal.
+
+### Data quality: duplicate item IDs
+
+Prior bulk imports may produce items with identical `item_id` fields (e.g., all items from one scan batch sharing the same timestamp-based ID). Before enrichment and link generation, always verify item IDs are unique. If duplicates exist, reassign with UUID-based IDs.
+
+### Subagent delegation pattern
+
+For daily cron scans, parallelize the three data sources:
+1. **Email scan** → delegate to subagent with Gmail API access
+2. **Calendar scan** → delegate to subagent with Calendar API access
+3. **Spotify sync** → delegate to subagent (or skip if no user OAuth)
+
+Then in the parent agent:
+- Process extraction results into ExtractionRecords, ConsumptionSignals, ItemRecords
+- Dedup and watermark updates
+- Enrichment via web search (can also be delegated)
+- Link generation between enriched items
+- Journal writing
+
+### Enrichment via web search
+
+For venue enrichment, search `"{venue_name} {city} restaurant review"` and extract:
+- Cuisine types from categories/descriptions
+- Price level (1-4 scale from $ indicators)
+- Neighborhood from address
+- Vibe descriptors from review summaries
+- Rating (numeric, e.g. 4.2)
+
+Focus enrichment on highest-priority items first (by signal_count), not alphabetically or randomly.
+
 ## Scan report (`taste.scan.report`)
 
 Summarizes the last scan run:
