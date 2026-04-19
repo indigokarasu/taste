@@ -1,3 +1,19 @@
+## [3.5.0] - 2026-04-18
+
+### Changed
+- Folded `## Integrated: taste-setup` and `## Integrated: ocas-taste-implementation` sections into the existing Taste workflow sections (email/calendar scan, taste.sync.spotify, storage layout).
+- Gmail OR/AND query pitfall is now a single line inside the email/calendar scan workflow with the corrected snippet inline (was a standalone "Known pitfall" block).
+- Calendar multi-scope scanning, cross-calendar dedup, venue-name cleanup, and venue-detection heuristics are now numbered markdown steps inside the scan workflow (previously Python-with-commentary).
+- OAuth patterns (Gmail multi-profile, Spotipy, Spotify token refresh pitfall) moved to `references/api_auth.md` with a `<!-- TODO: migrate OAuth to ocas-auth skill -->` marker.
+- Default `config.json` moved to `references/config.default.json`; self-update procedure moved to `references/self_update.md`; OKR YAML block replaced by a compact table.
+
+### Added
+- `## Installation` section in README.md covering Python venv setup, Spotify MCP `config.yaml` block, and cron registration.
+- `scripts/clean_signals.py` helper extracted from the former inline "Garbage Signal Cleanup" block.
+
+### Removed
+- `## Integrated:` sections from SKILL.md (all content preserved elsewhere).
+
 ## [3.4.4] - 2026-04-12
 
 ### Changed
