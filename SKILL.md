@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.4.4"
+  version: "3.5.0"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
@@ -120,17 +120,28 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 
 ### Email/calendar scan workflow (`taste.scan`)
 
-1. Access the user's email and search for transactional messages from known services (see `references/email_extraction.md` for sender allowlist)
-2. Access the user's Google Calendar for restaurant reservations and hotel bookings
-3. For each matching message/event, extract structured data into an ExtractionRecord
-4. Classify email_type: confirmation, reminder, update, cancellation, receipt
-5. Compute dedup_key and run dedup pass (see `references/email_extraction.md`)
-6. Exclude cancelled events from promotion
-7. Promote valid, non-duplicate extractions to ConsumptionSignals
-8. Create or update ItemRecords (increment signal_count, append to visit_dates)
-9. Queue unenriched items for enrichment
-10. Persist all records
-11. Write journal
+Gmail and Calendar access uses direct Google API clients with OAuth credentials loaded via the multi-profile discovery pattern in `references/api_auth.md`. <!-- TODO: migrate OAuth to ocas-auth skill -->
+
+1. Load Google OAuth credentials per `references/api_auth.md`. Use the user profile for email (the agent profile has no consumption emails); fall back to the agent profile only for calendar.
+2. Build the Gmail query for each configured service. Use OR between terms, AND across clauses — Gmail API treats space as AND by default, so sender terms must be grouped in parentheses before the date clause. Wrong form `from:a OR from:b OR after:YYYY/MM/DD` returns every email after the date; correct form is:
+   ```python
+   sender_query = " OR ".join(f"from:{p}" for p in sender_patterns)
+   query = f"({sender_query}) after:{date_str}"
+   ```
+3. For each matching message, extract structured data into an ExtractionRecord. After extraction, validate: drop records with `venue_name` in (None, "Unknown", "") and drop records whose `from` address does not match the configured `sender_patterns` for the service (wildcard patterns like `*@exploretock.com` are partial matches and will otherwise pull in unrelated mail).
+4. Enumerate writable calendars, not just `primary`. Scanning only `calendarId='primary'` misses shared calendars where reservation and hotel events typically live; in practice this is the difference between 2 events found and 130 venue extractions across 980 events. Call `calendarList().list()`, filter `accessRole in ('owner', 'writer')`, and call `events().list()` for each.
+5. Normalize venue names pulled from calendar summaries before dedup. Strip leading `Reservation at ` and trailing city suffixes (` - San Francisco`, ` – Daly City`, ` - Oakland`, ` - SF`).
+6. Apply venue-detection heuristics to event titles:
+   - Exclude: medical (doctor, dr., one medical, telehealth), video calls (zoom.us, teams.microsoft, google meet), generic meetings (standup, 1:1, sync, interview, therapy, dentist).
+   - Include: meal keywords plus venue indicators in location (st, ave, blvd, drive, road), named hotel brands (fairmont, marriott, hilton, hyatt), event types (omakase, chef, tasting, winery, brewery).
+7. Classify email_type: confirmation, reminder, update, cancellation, receipt.
+8. Compute dedup_key and run dedup pass (see `references/email_extraction.md`). Events often appear in multiple calendars, so use a cross-calendar dedup key of `{service}:{normalized_venue}:{event_date[:10]}` and skip any extraction whose key was already seen in this run.
+9. Exclude cancelled events from promotion.
+10. Promote valid, non-duplicate extractions to ConsumptionSignals.
+11. Create or update ItemRecords (increment signal_count, append to visit_dates).
+12. Queue unenriched items for enrichment.
+13. Persist all records. If signals.jsonl contains legacy garbage (signals with no real venue or duplicates across the key in step 8), run `scripts/clean_signals.py` against it.
+14. Write journal.
 
 ### Enrichment workflow (`taste.enrich.item`)
 
@@ -195,118 +206,44 @@ Music playback history from Spotify is stored as standard ConsumptionSignal reco
 
 ### taste.sync.spotify workflow
 
-1. Call Spotify MCP tools: `get_recently_played` for last 24h plays, `get_top_items` for recent favorites
-2. Parse MCP output to extract track names and artists
-3. For each track: create a ConsumptionSignal with `domain: "music"`, `source: "play"`, `strength: 0.60`
-4. For each track: create or update an ItemRecord with play counts and visit_dates
-5. Deduplicate by track name + artist against existing signals
-6. Write new signals to `signals.jsonl` and items to `items.jsonl`
-7. Update `music/spotify_sync_checkpoint.json` with last sync timestamp
-8. Write journal with entity observations for Elephas ingestion
+Authentication and Spotipy client setup are covered in `references/api_auth.md`. <!-- TODO: migrate OAuth to ocas-auth skill -->
 
-**Spotify MCP prerequisites:**
+1. Before running, verify a valid Spotify token is available. If the cached token is expired and has no `refresh_token`, skip the run — Spotify's user-data endpoints require interactive browser login to re-authorize (`npx @darrenjaws/spotify-mcp setup`), which cron cannot do headlessly.
+2. Call Spotify MCP tools: `get_recently_played` for the last 24h of plays and `get_top_items` for recent favorites.
+3. Parse MCP output to extract track names and artists.
+4. For each track, create a ConsumptionSignal with `domain: "music"`, `source: "play"`, `strength: 0.60`.
+5. For each track, create or update an ItemRecord with play counts and visit_dates.
+6. Deduplicate by track name + artist against existing signals.
+7. Write new signals to `signals.jsonl` and items to `items.jsonl`.
+8. Update `music/spotify_sync_checkpoint.json` with last sync timestamp.
+9. Write journal with entity observations for Elephas ingestion.
+
+**Spotify MCP prerequisites** (install-time setup lives in `README.md`):
 - MCP server: `@darrenjaws/spotify-mcp`
 - Environment variables: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
-- MCP config must include env vars under the spotify server entry (not just in shell env)
 - Run setup once: `npx @darrenjaws/spotify-mcp setup`
 
-Default config.json:
-```json
-{
-  "skill_id": "ocas-taste",
-  "skill_version": "3.0.0",
-  "config_version": "2",
-  "created_at": "",
-  "updated_at": "",
-  "domains": {
-    "enabled": ["music", "restaurant", "book", "movie", "product", "travel", "event"]
-  },
-  "decay": {
-    "halflife_days": 180
-  },
-  "retention": {
-    "days": 0,
-    "max_records": 10000
-  },
-  "email_scan": {
-    "enabled": true,
-    "last_scan_timestamp": null,
-    "extraction_confidence_threshold": 0.6,
-    "auto_promote_threshold": 0.8
-  },
-  "email_sources": {
-    "doordash": { "sender_patterns": ["no-reply@doordash.com", "orders@doordash.com"], "domain": "restaurant", "source_type": "purchase" },
-    "instacart": { "sender_patterns": ["no-reply@instacart.com"], "domain": "product", "source_type": "purchase" },
-    "good_eggs": { "sender_patterns": ["*@goodeggs.com"], "domain": "product", "source_type": "purchase" },
-    "tock": { "sender_patterns": ["*@exploretock.com"], "domain": "restaurant", "source_type": "visit" },
-    "opentable": { "sender_patterns": ["*@opentable.com"], "domain": "restaurant", "source_type": "visit" },
-    "yelp": { "sender_patterns": ["no-reply@yelp.com"], "domain": "restaurant", "source_type": "visit" },
-    "amazon": { "sender_patterns": ["auto-confirm@amazon.com", "ship-confirm@amazon.com"], "domain": "product", "source_type": "purchase" },
-    "hotels": { "sender_patterns": ["*@booking.com", "*@hotels.com", "*@marriott.com", "*@hilton.com", "*@hyatt.com", "*@ihg.com", "*@airbnb.com"], "domain": "travel", "source_type": "stay" }
-  },
-  "strength": {
-    "base_purchase": 0.80,
-    "base_visit": 0.70,
-    "base_stay": 0.75,
-    "base_play": 0.60,
-    "base_watch": 0.60,
-    "base_manual": 0.60,
-    "frequency_bonus_per_visit": 0.05,
-    "frequency_bonus_cap": 0.15,
-    "recency_bonus_days": 30,
-    "recency_bonus_value": 0.05
-  },
-  "user_preferences": {
-    "dietary_restrictions": [],
-    "dietary_preferences": [],
-    "cuisine_dislikes": [],
-    "notes": ""
-  }
-}
-```
+Default config.json is written from `references/config.default.json` on init. Key sections: `domains.enabled`, `decay.halflife_days`, `email_scan` (thresholds and last_scan_timestamp), `email_sources` (per-service sender_patterns / domain / source_type), `strength` (base weights plus frequency and recency bonuses), `user_preferences` (dietary_restrictions, dietary_preferences, cuisine_dislikes, notes).
 
 ## OKRs
 
 Universal OKRs from spec-ocas-journal.md apply to all runs.
 
-```yaml
-skill_okrs:
-  - name: recommendation_evidence_rate
-    metric: fraction of recommendations citing at least one consumed item
-    direction: maximize
-    target: 1.0
-    evaluation_window: 30_runs
-  - name: serendipity_novelty
-    metric: fraction of serendipity results crossing domain boundaries
-    direction: maximize
-    target: 0.80
-    evaluation_window: 30_runs
-  - name: signal_freshness
-    metric: fraction of active signals within decay half-life
-    direction: maximize
-    target: 0.60
-    evaluation_window: 30_runs
-  - name: email_extraction_coverage
-    metric: fraction of transactional emails successfully extracted with confidence >= threshold
-    direction: maximize
-    target: 0.90
-    evaluation_window: 30_runs
-  - name: dedup_accuracy
-    metric: fraction of dedup groupings not subsequently corrected by manual review
-    direction: maximize
-    target: 0.95
-    evaluation_window: 30_runs
-  - name: enrichment_coverage
-    metric: fraction of items with enriched = true
-    direction: maximize
-    target: 0.90
-    evaluation_window: 30_runs
-```
+All OKRs maximize against a 30-run evaluation window.
+
+| Name | Metric | Target |
+|---|---|---|
+| `recommendation_evidence_rate` | fraction of recommendations citing at least one consumed item | 1.0 |
+| `serendipity_novelty` | fraction of serendipity results crossing domain boundaries | 0.80 |
+| `signal_freshness` | fraction of active signals within decay half-life | 0.60 |
+| `email_extraction_coverage` | fraction of transactional emails successfully extracted with confidence >= threshold | 0.90 |
+| `dedup_accuracy` | fraction of dedup groupings not subsequently corrected by manual review | 0.95 |
+| `enrichment_coverage` | fraction of items with enriched = true | 0.90 |
 
 ## Optional skill cooperation
 
-- Google Maps — entity enrichment (cuisine, price level, neighborhood, vibe, rating)
-- Web search — backup enrichment when Google Maps data is insufficient
+- **Google Maps** — entity enrichment (cuisine, price level, neighborhood, vibe, rating)
+- **SearchX (local SearXNG)** — backup enrichment when Google Maps data is insufficient, replacing all external paid search APIs.
 - Sift — additional item enrichment via web research
 - Elephas — read Chronicle (read-only) for entity context
 - Elephas — journal entity observations consumed during Chronicle ingestion
@@ -335,36 +272,9 @@ On first invocation of any Taste command, run `taste.init`:
 5. Register cron job `taste:update` if not already present (check the platform scheduling registry first)
 6. Log initialization as a DecisionRecord in `decisions.jsonl`
 
-## Background tasks
+## Background tasks and self-update
 
-| Job name | Mechanism | Schedule | Command |
-|---|---|---|---|
-| `taste:update` | cron | `0 0 * * *` (midnight daily) | `taste.update` |
-
-```
-# Task declared in SKILL.md frontmatter metadata.{platform}.cron
-```
-
-
-## Self-update
-
-`taste.update` pulls the latest package from the `source:` URL in this file's frontmatter. Runs silently — no output unless the version changed or an error occurred.
-
-1. Read `source:` from frontmatter → extract `{owner}/{repo}` from URL
-2. Read local version from SKILL.md frontmatter `metadata.version`
-3. Fetch remote version from SKILL.md frontmatter: `gh api "repos/{owner}/{repo}/contents/SKILL.md" --jq '.content' | base64 -d | grep 'version:' | head -1 | sed 's/.*"\(.*\)".*/\1/'`
-4. If remote version equals local version → stop silently
-5. Download and install:
-   ```bash
-   TMPDIR=$(mktemp -d)
-   gh api "repos/{owner}/{repo}/tarball/main" > "$TMPDIR/archive.tar.gz"
-   mkdir "$TMPDIR/extracted"
-   tar xzf "$TMPDIR/archive.tar.gz" -C "$TMPDIR/extracted" --strip-components=1
-   cp -R "$TMPDIR/extracted/"* ./
-   rm -rf "$TMPDIR"
-   ```
-6. On failure → retry once. If second attempt fails, report the error and stop.
-7. Output exactly: `I updated Taste from version {old} to {new}`
+Cron schedule lives in frontmatter `metadata.{platform}.cron`. `taste:update` runs daily at midnight and invokes `taste.update`, which pulls the latest package from the `source:` URL silently unless the version changed. Full procedure in `references/self_update.md`.
 
 ## Visibility
 
@@ -381,13 +291,6 @@ public
 | `references/enrichment.md` | Before running taste.enrich.item; what to look up and extract per domain |
 | `references/recommendation_style.md` | Before generating recommendations or reports |
 | `references/journal.md` | Before taste.journal; at end of every run |
-
-## Update command
-
-This skill self-updates every 24 hours via:
-
-```bash
-taste.update
-```
-
-This pulls the latest version from GitHub and restarts the skill's background tasks if applicable.
+| `references/api_auth.md` | Before Gmail/Calendar/Spotify API calls; OAuth patterns and known token pitfalls |
+| `references/config.default.json` | On `taste.init`; template for a fresh config.json |
+| `references/self_update.md` | Before `taste.update`; full pull/install procedure |
