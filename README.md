@@ -28,7 +28,56 @@ Taste is a recommendation engine grounded entirely in real consumption behavior 
 
 ## Setup
 
-`taste.init` runs automatically on first invocation and creates all required directories, config.json, and JSONL files. No manual setup is required. It also registers the `taste:update` cron job (midnight daily) for automatic self-updates.
+`taste.init` runs automatically on first invocation and creates all required directories, config.json, and JSONL files. No manual setup is required for day-to-day operation — it also registers the `taste:update` cron job (midnight daily) for automatic self-updates.
+
+## Installation
+
+One-time host setup for running Taste under Hermes Agent.
+
+### Python virtual environment
+
+On Debian/Ubuntu with PEP 668 (externally managed Python), packages cannot be installed system-wide. Create a venv inside the skill's data directory:
+
+```bash
+# Install venv package if missing
+apt update && apt install -y python3.13-venv
+
+# Create virtual environment in skill data directory
+cd {agent_root}/commons/data/ocas-taste
+python3 -m venv venv
+source venv/bin/activate
+pip install spotipy google-api-python-client
+```
+
+### Spotify MCP configuration
+
+Add to `config.yaml` under `mcp_servers`:
+
+```yaml
+mcp_servers:
+  spotify:
+    command: node
+    args:
+      - /root/.hermes/node/lib/node_modules/@darrenjaws/spotify-mcp/build/bin.js
+    env:
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
+      SPOTIFY_REDIRECT_URI: http://localhost:8888/callback
+```
+
+MCP environment variables in `.env` do NOT propagate to MCP stdio commands. They must be declared under `mcp_servers.spotify.env` in `config.yaml`.
+
+### Cron registration
+
+```bash
+# Email/calendar scan (daily)
+hermes cron create --name taste:scan --skill ocas-taste "0 6 * * *" \
+  "scan email and calendar for consumption signals from the last 24 hours"
+
+# Spotify sync (daily at midnight)
+hermes cron create --name taste:sync-spotify --skill ocas-taste "0 0 * * *" \
+  "sync Spotify recently played tracks"
+```
 
 ## Dependencies
 
