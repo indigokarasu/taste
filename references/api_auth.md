@@ -50,6 +50,26 @@ for tp in token_paths:
 If refresh raises `invalid_grant: Bad Request`, the token has been revoked
 and the user must re-authorize.
 
+### Known pitfall: Calendar API scope not in token
+
+If `build('calendar', 'v1', credentials=creds)` raises
+`googleapiclient.errors.UnknownApiNameOrVersion: name: calendar version: v1`,
+the OAuth token lacks the `calendar.readonly` or `calendar.events.readonly`
+scope. The `google_token.json` on this system currently only has
+`gmail.readonly` scope. The calendar scan must be skipped gracefully:
+
+```python
+try:
+    calendar = build('calendar', 'v1', credentials=creds)
+except Exception:
+    # Calendar scope not available — skip calendar scan
+    calendar = None
+```
+
+To fix: re-authorize with `calendar.readonly` scope added to the OAuth
+client's authorized scopes, then the token will include calendar access on
+next interactive login.
+
 ## Spotify OAuth (Spotipy)
 
 `hermes mcp call` does not exist — the Hermes MCP CLI only supports `add`,
