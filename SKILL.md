@@ -20,14 +20,22 @@ metadata:
     category: preference
     cron:
       - name: "taste:update"
-        schedule: "0 0 * * *"
+        schedule: "25 7 * * *"
         command: "taste.update"
       - name: "taste:sync-spotify"
-        schedule: "0 0 * * *"
+        schedule: "10 7 * * *"
         command: "taste.sync.spotify"
+      - name: "taste:historical-email"
+        schedule: "0 9 * * *"
+        command: "taste.historical.email"
+      - name: "taste:historical-calendar"
+        schedule: "10 10 * * *"
+        command: "taste.historical.calendar"
+      - name: "taste:scan"
+        schedule: "10 13 * * *"
+        command: "taste.scan"
   openclaw:
     skill_type: system
-    visibility: public
     filesystem:
       read:
         - "{agent_root}/commons/data/ocas-taste/"
@@ -42,14 +50,21 @@ metadata:
       requires_binaries: [gh, tar, python3]
     cron:
       - name: "taste:update"
-        schedule: "0 0 * * *"
+        schedule: "25 7 * * *"
         command: "taste.update"
       - name: "taste:sync-spotify"
-        schedule: "0 0 * * *"
+        schedule: "10 7 * * *"
         command: "taste.sync.spotify"
+      - name: "taste:historical-email"
+        schedule: "0 9 * * *"
+        command: "taste.historical.email"
+      - name: "taste:historical-calendar"
+        schedule: "10 10 * * *"
+        command: "taste.historical.calendar"
+      - name: "taste:scan"
+        schedule: "10 13 * * *"
+        command: "taste.scan"
 ---
-
-# Taste
 
 Taste builds a personalized taste model from real consumption signals — purchases, restaurant visits, food delivery orders, hotel stays, music plays, and movie watches. It scans the user's email and calendar to automatically extract these signals, enriches venue entities with taste-relevant attributes (cuisine, price point, neighborhood, vibe) via Google Maps and web search, and uses temporal decay so recent behavior outweighs stale history. Every recommendation names the specific prior consumption that justifies it, respects dietary restrictions, and only suggests places the user hasn't been.
 
