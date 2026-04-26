@@ -24,15 +24,23 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 # Config
-DATA_DIR = Path("/root/.hermes/commons/data/ocas-taste")
+AGENT_ROOT = Path(os.environ.get("HERMES_HOME") or os.environ.get("OCAS_AGENT_ROOT") or Path.home() / ".hermes")
+DATA_DIR = AGENT_ROOT / "commons/data/ocas-taste"
 MUSIC_DIR = DATA_DIR / "music"
 TOKEN_FILE = MUSIC_DIR / "spotify_token.json"
 CACHE_FILE = Path.home() / ".cache-spotify-taste"
 
-CLIENT_ID = "***CLIENT_ID_REMOVED***"
-CLIENT_SECRET = "***SECRET_REMOVED***"
+CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET", "")
 REDIRECT_URI = "http://localhost:8888/callback"
 SCOPE = "user-read-recently-played user-top-read user-library-read"
+
+if not CLIENT_ID or not CLIENT_SECRET:
+    print("Error: SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET must be set.", file=sys.stderr)
+    print("Add to ~/.hermes/.env:", file=sys.stderr)
+    print("  SPOTIFY_CLIENT_ID=<your_client_id>", file=sys.stderr)
+    print("  SPOTIFY_CLIENT_SECRET=<your_client_secret>", file=sys.stderr)
+    sys.exit(1)
 
 def generate_auth_url():
     """Generate Spotify authorization URL."""

@@ -138,13 +138,25 @@ next interactive login.
 
 ## Spotify OAuth (Spotipy)
 
+Spotify app credentials are loaded from environment, not hardcoded in
+scripts. Set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in
+`~/.hermes/.env`:
+
+```
+SPOTIFY_CLIENT_ID=<client_id_from_developer_dashboard>
+SPOTIFY_CLIENT_SECRET=<client_secret_from_developer_dashboard>
+```
+
 `hermes mcp call` does not exist — the Hermes MCP CLI only supports `add`,
 `remove`, `list`, `serve`, `test`, and `configure`. For programmatic Spotify
 access from cron scripts, use Spotipy directly with a cached OAuth token:
 
 ```python
-import spotipy
+import os, spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
+CLIENT_ID = os.environ["SPOTIFY_CLIENT_ID"]
+CLIENT_SECRET = os.environ["SPOTIFY_CLIENT_SECRET"]
 
 sp_oauth = SpotifyOAuth(
     client_id=CLIENT_ID,
