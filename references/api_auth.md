@@ -23,14 +23,80 @@ use the agent profile for email scanning — it has no consumption emails.
 Always try the user token first and fall back to the agent token only for
 calendar if the primary is missing.
 
+### Token file locations
+
+This system has multiple Google OAuth token files from different profiles.
+Check ALL of them before concluding auth is unavailable — they may have
+different client IDs and refresh states:
+
+```python
+token_paths = [
+    Path.home() / ".hermes" / "jared_google_credentials.json",   # Jared Zimmerman (user)
+
+    Path.home() / ".hermes" / "indigo_google_credentials.json",  # Indigo Karasu (agent)
+
+]
+```
+
+The credentials file at `~/.hermes/*_google_credentials.json` may lack an `expiry`
+field (so `creds.expired` returns `False` even when the token is actually
+dead). In this case the refresh only fails when an actual API call is made.
+Always test with a real API call (`gmail.users().getProfile().execute()`)
+or a direct HTTP refresh to confirm the token works.
+
+### Revocation detection
+
+When a refresh fails with `invalid_grant: Token has been expired or revoked.`,
+the token is definitively dead — no retry will help. Causes include:
+- Password change on the Google account
+- Manual revocation in myaccount.google.com → Security → Third-party apps
+- 6+ months of inactivity with no token refresh
+
+To confirm: try a raw HTTP POST to confirm the library isn't mangling the request:
+```python
+import requests
+resp = requests.post("https://oauth2.googleapis.com/token", data={
+    "client_id": token_data["client_id"],
+    "client_secret": token_data["client_secret"],
+    "refresh_token": token_data["refresh_token"],
+    "grant_type": "refresh_token",
+})
+# Both library and HTTP will return 400 {"error": "invalid_grant"}
+```
+
+### Recovery flow
+
+When all tokens are revoked, the user must re-authorize. Generate the OAuth
+URL using the google-workspace setup script (NOT by manually constructing
+the URL — the script handles PKCE code verifier and state correctly):
+
+```bash
+cd /root/.hermes/hermes-agent
+python skills/productivity/google-workspace/scripts/setup.py --auth-url
+```
+
+The user signs in with **jared.zimmerman@gmail.com** (the account with 248K
+consumption emails), authorizes the scopes, copies the code from the
+redirect URL, and sends it back. Exchange with:
+
+```bash
+python skills/productivity/google-workspace/scripts/setup.py --auth-code CODE
+```
+
+The token is saved to `~/.hermes/google_token.json`. Verify with:
+
+```bash
+python skills/productivity/google-workspace/scripts/setup.py --check
+```
+
 ```python
 from pathlib import Path
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
 token_paths = [
-    Path.home() / ".hermes" / "google_token.json",           # Primary (user)
-    Path.home() / ".hermes-indigo" / "google_token.json",    # Agent (calendar fallback only)
+    Path.home() / ".hermes" / "indigo_google_credentials.json",  # Indigo (agent)
+    Path.home() / ".hermes" / "jared_google_credentials.json",   # Jared (user)
 ]
 
 creds = None
@@ -55,7 +121,7 @@ and the user must re-authorize.
 If `build('calendar', 'v1', credentials=creds)` raises
 `googleapiclient.errors.UnknownApiNameOrVersion: name: calendar version: v1`,
 the OAuth token lacks the `calendar.readonly` or `calendar.events.readonly`
-scope. The `google_token.json` on this system currently only has
+scope. The `google_credentials.json` on this system currently only has
 `gmail.readonly` scope. The calendar scan must be skipped gracefully:
 
 ```python

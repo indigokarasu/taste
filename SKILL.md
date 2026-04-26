@@ -117,6 +117,44 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 - `taste.update` — pull latest from GitHub source; preserves journals and data
 - `taste.sync.spotify` — pull recent Spotify listening history via Spotify MCP; creates/updates music ConsumptionSignals; runs daily via scheduled task
 
+## Implementation
+
+The active cron implementation lives at `/root/.hermes/webui/workspace/taste.py` (consolidated single-file script). This is what `python taste.py scan-calendar 365` runs. The skill's `references/` files describe the full specification; the consolidated script implements a subset with some deviations:
+
+- **Calendar scan** (implemented): enumerates all writable calendars, extracts venue events, promotes to signals
+- **Email scan** (implemented): Gmail queries per `email_sources` config for DoorDash, Instacart, Tock, OpenTable, Yelp, Amazon, Hotels
+- **Enrichment** (stub): calls Google Maps Places API but Maps service v1 is not enabled on this GCP project — enrichment stuck at ~4%
+- **Spotify sync** (not in consolidated impl): use the separate Spotify MCP workflow instead
+- **Recommendations** (not in consolidated impl): use separate query workflow
+
+### Known implementation gaps (consolidated script)
+
+1. **Token fallback fix (2026-04-25):** The original script only checked the first existing token path and failed immediately if it couldn't refresh. Patched to try all 4 token paths sequentially (`google_token.json` → `hermes-indigo/google_token.json` → `jared_google_token.json` → `indigo_google_credentials.json`). If the primary token is revoked but another profile's token works, the script now recovers.
+2. **Venue name normalization (2026-04-25):** Added `_normalize_calendar_venue()` method per skill workflow step 5 — strips "Reservation at " prefix, "for N" suffix, city suffixes, and emoji decorations from calendar event titles.
+3. **Cross-calendar dedup:** Events in Personal vs Family calendars share the same reservation but get different calendar event IDs, so dedup by `{service}:{order_id}:...` fails. A date+venue cross-calendar dedup pass is needed.
+4. **Enrichment:** Google Maps Places API (`places/v1`) is not enabled. The script tries `maps/v1` which doesn't exist. Fix requires switching to `https://places.googleapis.com/v1/places:searchText` or enabling the Places API in the GCP project.
+
+## Cron failure fallback
+
+When a taste cron job runs and the Gmail/Calendar OAuth token is revoked (all refresh attempts return `invalid_grant`):
+
+1. **Don't SILENT-fail.** Neither produce "[SILENT]" nor silently crash. Always output a report containing:
+   - The auth failure diagnosis (which tokens were tried, which scopes)
+   - The OAuth re-authorization URL (generated via `google-workspace/scripts/setup.py --auth-url`)
+   - The current taste model state (signals, items, enrichment coverage, freshness)
+   - Any data quality issues found (low enrichment %, stale signals %, calendar noise)
+2. **Check ALL token files.** The multi-profile fallback (`google_token.json`, `jared_google_token.json`, `indigo_google_credentials.json`, `~/.hermes-indigo/google_token.json`) may have different token states. Test each independently before concluding all are revoked. **Important:** the consolidated script's `_init_google_services` only tries paths in order and returns on first success — but if all fail, it now falls through to the service account. The cron-run agent should still manually test each path independently before concluding all are revoked.
+3. **Try both library and raw HTTP refresh.** The google-auth library and a direct `requests.post` to `https://oauth2.googleapis.com/token` may produce different error messages. If the library says `invalid_grant: Token has been expired or revoked.`, the token is definitively dead — no retry will help.
+4. **Generate the auth URL** using the google-workspace setup script, NOT by manually constructing the URL. The script handles PKCE code verifier, state, and redirect URI correctly:
+   ```bash
+   python skills/productivity/google-workspace/scripts/setup.py --auth-url
+   ```
+5. **Report existing data quality.** Even when scan fails, analyze existing `signals.jsonl` and `items.jsonl` for:
+   - Enrichment coverage (target: 90% — if below 10%, flag as critical)
+   - Signal freshness (fraction of signals within decay half-life of 180 days)
+   - Calendar noise (entries like "Breakfast", "Lunch" without venue names)
+   - Duplicate venue names (same restaurant with and without "Reservation at " prefix or city suffix)
+
 ## Operating invariants
 
 - Evidence-first: recommendations must reference specific consumed items
