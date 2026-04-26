@@ -1,16 +1,39 @@
 """Garbage signal cleanup helper.
 
 Removes signals with no real venue and deduplicates across
-(venue_name, event_date, extraction_source, domain). Writes the cleaned
-set back to the same JSONL file.
+(venue_name, event_date, extraction_source, domain). Also filters
+generic calendar meal-titles (Breakfast, Lunch, Dinner, Brunch) that
+aren't real venue names. Writes the cleaned set back to the same JSONL file.
 
 Usage:
     python scripts/clean_signals.py /path/to/signals.jsonl
 """
 
 import json
+import re
 import sys
 from pathlib import Path
+
+
+GENERIC_MEAL_TITLES = frozenset({
+    "breakfast", "lunch", "dinner", "brunch",
+    "breakfast/lunch", "breakfast / lunch",
+})
+
+GENERIC_MEAL_RE = re.compile(
+    r"^(breakfast|lunch|dinner|brunch)(\s+/|/\s+.*|$)",
+    re.IGNORECASE,
+)
+
+
+def _is_generic_meal(venue_name: str) -> bool:
+    """Check if venue_name is a generic calendar meal title, not a real venue."""
+    name_lower = venue_name.strip().lower()
+    if name_lower in GENERIC_MEAL_TITLES:
+        return True
+    if GENERIC_MEAL_RE.match(venue_name):
+        return True
+    return False
 
 
 def clean(signals_path: Path) -> tuple[int, int]:
@@ -21,6 +44,7 @@ def clean(signals_path: Path) -> tuple[int, int]:
     clean_signals = [
         s for s in signals
         if s.get("venue_name") not in (None, "Unknown", "")
+        and not _is_generic_meal(s.get("venue_name", ""))
     ]
 
     seen: set[tuple[str, str, str, str]] = set()

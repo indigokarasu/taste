@@ -148,13 +148,13 @@ Each scan processes messages/events newer than `last_scan_timestamp`, then updat
 
 ### Google OAuth token refresh
 
-The Google token at `~/.hermes/google_token.json` expires periodically. Before scanning, check `expiry` and refresh if needed:
+Google credentials at `~/.hermes/*_google_credentials.json` expire periodically. Before scanning, check `expiry` and refresh if needed:
 
 ```python
 import json, requests
 from datetime import datetime, timezone, timedelta
 
-with open(os.path.expanduser("~/.hermes/google_token.json")) as f:
+with open(os.path.expanduser("~/.hermes/indigo_google_credentials.json")) as f:
     token = json.load(f)
 
 expiry = datetime.fromisoformat(token["expiry"].replace("Z", "+00:00"))
@@ -168,7 +168,7 @@ if datetime.now(timezone.utc) >= expiry:
     new = resp.json()
     token["token"] = new["access_token"]
     token["expiry"] = (datetime.now(timezone.utc) + timedelta(seconds=new["expires_in"])).isoformat()
-    with open(os.path.expanduser("~/.hermes/google_token.json"), "w") as f:
+    with open(os.path.expanduser("~/.hermes/indigo_google_credentials.json"), "w") as f:
         json.dump(token, f, indent=2)
 ```
 
