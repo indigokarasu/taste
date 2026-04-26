@@ -14,7 +14,7 @@ description: >
 metadata:
   author: Indigo Karasu
   email: mx.indigo.karasu@gmail.com
-  version: "3.5.1"
+  version: "3.5.2"
   hermes:
     tags: [preferences, recommendations, food]
     category: preference
