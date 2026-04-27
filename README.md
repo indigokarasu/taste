@@ -100,6 +100,13 @@ hermes cron create --name taste:sync-spotify --skill ocas-taste "0 0 * * *" \
 
 ## Changelog
 
+### v3.5.2 — April 26, 2026
+- Removed stale Spotify sync variants superseded by `spotify_sync_mcp.py` (deleted `spotify_mcp_sync.py` near-duplicate and `spotify_sync.py` spotipy-based variant; MCP path is canonical)
+
+### v3.5.1 — April 26, 2026
+- **Security**: Spotify `CLIENT_ID` / `CLIENT_SECRET` now read from env vars; hardcoded values purged from `scripts/spotify_auth_helper.py` and from git history. Old credential must be rotated in the Spotify Developer Dashboard.
+- Replaced hardcoded `/root/.hermes` with env-resolved `AGENT_ROOT` (`HERMES_HOME` || `OCAS_AGENT_ROOT` || `~/.hermes`)
+
 ### v3.4.4 — April 12, 2026
 - Switch Spotify sync from spotify-history skill to Spotify MCP
 
@@ -109,28 +116,8 @@ hermes cron create --name taste:sync-spotify --skill ocas-taste "0 0 * * *" \
 - Elephas journal cooperation in skill cooperation section
 - Concept/Idea, Entity/Person added to ontology types
 
-### v3.0.0 -- March 27, 2026
-- Email and calendar scanning: automatic extraction of consumption signals from transactional emails (DoorDash, Instacart, Good Eggs, Tock, OpenTable, Yelp, Amazon, hotel bookings) and Google Calendar
-- Deduplication engine: handles confirmation/reminder/cancellation chains with composite dedup keys
-- Entity enrichment: enriches venues and items with taste-relevant attributes (cuisine, price level, neighborhood, vibe) via Google Maps and web search
-- Strength model: frequency bonuses, recency bonuses, and extraction confidence thresholds
-- Recommendation rules: discovery-only (never recommend visited places, except seasonal menu changes), dietary restriction enforcement, enrichment-aware pattern reasoning
-- User preferences: dietary restrictions, dietary preferences, and cuisine dislikes in config
-- New schemas: ExtractionRecord, extended ConsumptionSignal, extended ItemRecord with enrichment fields
-- New reference docs: strength_model.md, email_extraction.md, enrichment.md
-- New OKRs: email_extraction_coverage, dedup_accuracy, enrichment_coverage
-
 ### v3.0.1 -- March 27, 2026
 - Added `taste.update` command and midnight cron for automatic version-checked self-updates
-
-### v2.2.0 -- March 22, 2026
-- Routing improvements
-
-### v2.1.0 -- March 22, 2026
-- Journal documentation and initialization with storage setup
-
-### v2.0.0 -- March 18, 2026
-- Initial release as part of the unified OCAS skill suite
 ---
 
 *Taste is part of the [OCAS Agent Suite](https://github.com/indigokarasu) -- a collection of interconnected skills for personal intelligence, autonomous research, and continuous self-improvement. Each skill owns a narrow responsibility and communicates with others through structured signal files, shared journals, and Chronicle, a long-term knowledge graph that accumulates verified facts over time.*
