@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Paths
-DATA_DIR = Path(__file__).parent.parent
+AGENT_ROOT = Path(os.environ.get("AGENT_ROOT", Path.home() / ".hermes"))
+DATA_DIR = AGENT_ROOT / "commons/data/ocas-taste"
 SIGNALS_FILE = DATA_DIR / "signals.jsonl"
 ITEMS_FILE = DATA_DIR / "items.jsonl"
 CHECKPOINT_FILE = DATA_DIR / "music" / "spotify_sync_checkpoint.json"
