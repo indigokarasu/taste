@@ -14,7 +14,7 @@ from typing import Dict, List, Any
 # Auth
 AGENT_ROOT = Path(os.environ.get("AGENT_ROOT", Path.home() / ".hermes"))
 sys.path.insert(0, str(AGENT_ROOT / 'scripts'))
-from google_auth_mcp import get_service
+from Google auth import get_service
 
 service = get_service('gmail', 'v1', ['https://www.googleapis.com/auth/gmail.modify'], account='jared.zimmerman@gmail.com')
 

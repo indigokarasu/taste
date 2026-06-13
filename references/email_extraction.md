@@ -157,7 +157,7 @@ sys.path.insert(0, str(Path('/root/.hermes/scripts')))
 from google_auth import get_gmail_service, get_calendar_service
 ```
 
-The helper handles token refresh automatically. Credentials are stored at `/root/.google_workspace_mcp/credentials/`. If tokens are revoked, re-authorize with `python3 /root/.hermes/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py`.
+The helper handles token refresh automatically. Credentials are stored at `Google OAuth credentials`. If tokens are revoked, re-authorize with `python3 /root/.hermes/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py`.
 
 Token scopes needed: `gmail.modify` and `calendar`.
 

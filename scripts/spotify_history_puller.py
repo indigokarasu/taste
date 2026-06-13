@@ -15,8 +15,29 @@ def get_access_token():
     client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
     refresh_token = os.getenv("SPOTIFY_REFRESH_TOKEN")
     
-    if not all([client_id, client_secret, refresh_token]):
-        raise ValueError("Missing Spotify credentials. Set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN")
+    # Enumerate which credentials are present vs missing for diagnostics
+    missing = []
+    if not client_id:
+        missing.append("SPOTIFY_CLIENT_ID")
+    if not client_secret:
+        missing.append("SPOTIFY_CLIENT_SECRET")
+    if not refresh_token:
+        missing.append("SPOTIFY_REFRESH_TOKEN")
+    
+    if missing:
+        present = []
+        if client_id:
+            present.append("SPOTIFY_CLIENT_ID")
+        if client_secret:
+            present.append("SPOTIFY_CLIENT_SECRET")
+        if refresh_token:
+            present.append("SPOTIFY_REFRESH_TOKEN")
+        
+        msg = f"Missing Spotify credentials: {', '.join(missing)}"
+        if present:
+            msg += f" (present: {', '.join(present)})"
+        msg += ". The refresh token requires completing the OAuth Authorization Code flow interactively."
+        raise ValueError(msg)
     
     response = requests.post(
         "https://accounts.spotify.com/api/token",
@@ -43,19 +64,14 @@ def get_recently_played(access_token, limit=50):
 
 def main():
     try:
-        # Get access token
         token = get_access_token()
-        
-        # Fetch recently played tracks
         data = get_recently_played(token)
         
-        # Process tracks
         tracks = []
         for item in data.get("items", []):
             track = item.get("track", {})
             played_at = item.get("played_at")
             
-            # Convert to ISO format if needed
             if played_at:
                 dt = datetime.strptime(played_at, "%Y-%m-%dT%H:%M:%S.%fZ")
                 played_at = dt.isoformat() + "Z"
@@ -69,7 +85,6 @@ def main():
                 "duration_ms": track.get("duration_ms")
             })
         
-        # Output JSON
         print(json.dumps(tracks, indent=2))
         
     except Exception as e:

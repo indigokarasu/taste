@@ -108,8 +108,8 @@ class TasteSkill:
 
         # Google Workspace MCP credentials — each account uses its own OAuth client
         token_paths = [
-            Path("/root/.google_workspace_mcp/credentials/jared.zimmerman@gmail.com.json"),   # Jared Zimmerman (user) — primary for email/calendar
-            Path("/root/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
+            Path("[Google OAuth credentials]jared.zimmerman@gmail.com.json"),   # Jared Zimmerman (user) — primary for email/calendar
+            Path("[Google OAuth credentials]mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
         ]
 
         for token_path in token_paths:

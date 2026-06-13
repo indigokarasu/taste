@@ -32,7 +32,7 @@ sys.path.insert(0, str(Path('/root/.hermes/scripts')))
 from google_auth import get_service, get_gmail_service, get_drive_service, get_calendar_service, get_people_service
 ```
 
-The helper handles token refresh automatically. Credentials are stored at `/root/.google_workspace_mcp/credentials/`.
+The helper handles token refresh automatically. Credentials are stored at `Google OAuth credentials`.
 
 ### Two Google accounts
 
@@ -101,3 +101,15 @@ Resolution: the user runs `npx @darrenjaws/spotify-mcp setup` in a
 browser-accessible environment, which writes tokens to
 `~/.spotify-mcp/tokens.json`. Gate the cron job on a valid-token check to
 avoid repeated failed runs.
+
+### Spotify history puller script
+
+The active script is `scripts/spotify_history_puller.py` (not MCP). It uses
+the Spotify Web API directly with OAuth refresh token. Env vars are loaded
+from `~/.hermes/.env`. The script now reports which specific credentials are
+missing vs present in its error message, making it clear when only
+`SPOTIFY_REFRESH_TOKEN` is absent.
+
+Script location: `{skill_root}/scripts/spotify_history_puller.py`
+Data output: JSON to stdout (array of track objects)
+Errors: stderr with missing-credential details, exit code 1
