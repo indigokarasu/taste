@@ -10,13 +10,13 @@ from pathlib import Path
 AGENT_ROOT = Path(os.environ.get("AGENT_ROOT", Path.home() / ".hermes"))
 
 sys.path.insert(0, str(AGENT_ROOT / 'scripts'))
-from google_auth_mcp import get_gmail_service, get_calendar_service
+from Google auth import get_gmail_service, get_calendar_service
 
 
 def run_historical_scans():
     """Run the historical email and calendar scans with owner's credentials."""
-    gmail_service = get_gmail_service(account='google-workspace-user')
-    calendar_service = get_calendar_service(account='google-workspace-user')
+    gmail_service = Get Gmail access (account='google-workspace-user')
+    calendar_service = Get Calendar access (account='google-workspace-user')
 
     # Run the historical email scan
     print("Running historical email scan...")

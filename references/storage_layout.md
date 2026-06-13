@@ -5,7 +5,7 @@
 ```
 {agent_root}/commons/data/ocas-taste/
   config.json
-  signals.jsonl       ← consumption signals
+  signals.jsonl       ← consumption signals (calendar, doordash, hotels, opentable, yelp, instacart, tock, amazon, spotify)
   items.jsonl         ← entities (restaurants, venues, media items)
   links.jsonl         ← entity relationship links
   decisions.jsonl     ← audit log
@@ -15,7 +15,22 @@
   scripts/            ← taste_full_enrich.py, taste_cleanup_and_enrich.py
   music/
     spotify_sync_checkpoint.json
+  signals/
+    signals.jsonl     ← Styx purchase signals (rainbow_grocery, etc.) — SEPARATE store from root signals.jsonl
+  items/
+    items.jsonl       ← Styx purchase item records — SEPARATE store from root items.jsonl
 ```
+
+### ⚠️ Two signal stores
+
+Signals are split across two locations. **Both must be counted for totals.**
+
+| File | Contents | Source |
+|---|---|---|
+| `signals.jsonl` (root) | Calendar, DoorDash, Hotels.com, OpenTable, Yelp, Instacart, Tock, Amazon, Spotify | Email/calendar scans |
+| `signals/signals.jsonl` (subdir) | Styx purchase transactions (grocery, retail) | Styx delta ingestion |
+
+The `scan-calendar` command's output `signals_created` field reports the Styx delta count, **not** the calendar signal count. Calendar signals are promoted to the root `signals.jsonl` via `_process_extractions()` but the output JSON conflates the two. To get the actual calendar signal count, query `signals.jsonl` for `extraction_source == 'calendar'`.
 
 ## Journal directory
 
