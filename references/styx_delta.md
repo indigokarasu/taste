@@ -48,28 +48,34 @@ Multiple transactions may be for the same merchant (repeat visits). Group by `me
 
 ### 4. Enrich each unique venue via Google Places
 
-Use the **Places API (New)** text search endpoint:
+Use the **legacy Places API** text search endpoint (the v1 API at `places.googleapis.com/v1/places:searchText` returns 400 — do NOT use it):
 
 ```
-POST https://places.googleapis.com/v1/places:searchText
-Headers:
-  X-Goog-Api-Key: {API_KEY}
-  X-Goog-FieldMask: places.displayName,places.formattedAddress,places.priceLevel,places.rating,places.types,places.primaryType,places.editorialSummary,places.location
-Body:
-  {"textQuery": "{merchant_name} restaurant", "maxResultCount": 3}
+GET https://maps.googleapis.com/maps/api/place/textsearch/json?query={merchant_name} restaurant {city}&key={API_KEY}
 ```
 
-**Rate limit**: ~100 req/sec. Use 50ms delay between requests to stay safe.
+**Rate limit**: ~100 req/sec. Use 100ms delay between requests to stay safe.
 
-**Styx merchant name truncation**: Styx truncates merchant names to ~15 characters (e.g., "Cha-ya-mi" for "Chaya Mistercharli", "Mr.charli" for "Mr. Charlie's"). Google Places text search handles truncated names well — always use the first result. Validated at 100% match rate (124/124 venues) in May 2026.
+**Styx merchant name truncation**: Styx truncates merchant names to ~15 characters (e.g., "Cha-ya-mi" for "Chaya Mistercharli", "Mr.charli" for "Mr. Charlie's"). Google Places text search handles truncated names well — always use the first result. Validated at 100% match rate (124/124 venues) in May 2026. Re-validated 2026-06-17: 8/8 merchants enriched successfully.
 
 **Extract from the first result**:
-- `displayName.text` → `ItemRecord.name` (the canonical display name)
-- `formattedAddress` → parse neighborhood (first comma-separated segment) and city (second-to-last)
-- `priceLevel` → map to numeric: FREE=1, INEXPENSIVE=1, MODERATE=2, EXPENSIVE=3, VERY_EXPENSIVE=4
-- `rating` → numeric rating (may be null for new/unrated venues)
+- `name` → `ItemRecord.name` (the canonical display name)
+- `formatted_address` or `vicinity` → parse neighborhood (first comma-separated segment) and city (second-to-last)
+- `price_level` → map to numeric: 0=1, 1=1, 2=2, 3=3, 4=4
+- `rating` → numeric rating (may be absent for new/unrated venues)
 - `types` → extract cuisine types, filtering out generic values (`point_of_interest`, `establishment`, `food`, `restaurant`)
-- `primaryType` → fallback cuisine if `types` yields nothing specific
+- `place_id` → for future dedup
+
+**Python pattern (confirmed working 2026-06-17)**:
+```python
+import urllib.request, urllib.parse
+params = urllib.parse.urlencode({'query': f'{merchant_name} restaurant', 'key': api_key})
+url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?{params}'
+with urllib.request.urlopen(url, timeout=10) as resp:
+    data = json.loads(resp.read())
+    if data.get('status') == 'OK' and data.get('results'):
+        result = data['results'][0]
+```
 
 ### 5. Build ItemRecord
 
@@ -95,7 +101,7 @@ Body:
   "avg_spend": <total / count>,
   "enriched": true,
   "enriched_at": "<ISO timestamp>",
-  "enrichment_source": "google_places",
+  "enrichment_source": "google_places_legacy",
   "created_at": "<ISO timestamp>"
 }
 ```

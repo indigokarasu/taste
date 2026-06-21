@@ -27,7 +27,7 @@ class TasteSkill:
     """Taste skill implementation for consumption signal extraction and enrichment"""
 
     def __init__(self, data_dir: str = None):
-        self.data_dir = Path(data_dir) if data_dir else Path.home() / ".hermes" / "commons" / "data" / "ocas-taste"
+        self.data_dir = Path(data_dir) if data_dir else Path("/root/.hermes/commons/data/ocas-taste")
         self.config_file = self.data_dir / "config.json"
         self.signals_file = self.data_dir / "signals.jsonl"
         self.items_file = self.data_dir / "items.jsonl"
@@ -108,8 +108,8 @@ class TasteSkill:
 
         # Google Workspace MCP credentials — each account uses its own OAuth client
         token_paths = [
-            Path("[Google OAuth credentials]jared.zimmerman@gmail.com.json"),   # Jared Zimmerman (user) — primary for email/calendar
-            Path("[Google OAuth credentials]mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
+            Path("/root/.google_workspace_mcp/credentials/jared.zimmerman@gmail.com.json"),   # Jared Zimmerman (user) — primary for email/calendar
+            Path("/root/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
         ]
 
         for token_path in token_paths:
@@ -117,7 +117,9 @@ class TasteSkill:
                 continue
 
             try:
-                creds = Credentials.from_authorized_user_file(str(token_path), ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/calendar'])
+                token_data = json.loads(Path(token_path).read_text())
+                token_scopes = token_data.get('scopes', ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.readonly'])
+                creds = Credentials.from_authorized_user_file(str(token_path), token_scopes)
 
                 if not creds.valid:
                     if creds.expired and creds.refresh_token:
@@ -143,7 +145,7 @@ class TasteSkill:
         print("No Google token file found (tried all paths)")
 
         # Fall back to service account for Maps
-        service_account_path = Path.home() / ".hermes" / "credentials" / "hermes-ocigcp.json"
+        service_account_path = Path("/root/.hermes/credentials/hermes-ocigcp.json")
         if service_account_path.exists():
             try:
                 scopes = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/maps']
@@ -841,7 +843,7 @@ class TasteSkill:
         if api_key:
             return api_key
         # Check .env file
-        env_path = Path.home() / ".hermes" / ".env"
+        env_path = Path("/root/.hermes/.env")
         if env_path.exists():
             with open(env_path) as f:
                 for line in f:

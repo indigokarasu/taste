@@ -54,3 +54,40 @@ python3 /root/.hermes/skills/infrastructure/google-workspace-auth/scripts/google
 ```
 ⚠️ **Account limitation:** `google_oauth_init.py` hardcodes Indigo's email (`mx.indigo.karasu@gmail.com`) on line 141. It will NOT re-authorize Jared's account. For Jared's account, either edit line 141 to `'jared.zimmerman@gmail.com'` (requires localhost:8000 access), or generate the re-auth URL manually by extracting `client_id`/`client_secret` from `/root/.google_workspace_mcp/credentials/jared.zimmerman@gmail.com.json` and constructing the OAuth URL with `login_hint=jared.zimmerman@gmail.com` (see SKILL.md gotchas for the PKCE pattern).
 The scan report should include the file sizes and flag any 0-byte credential files explicitly.
+
+## Token expiry timezone suffix (distinct from `invalid_grant` and 0-byte)
+
+If the credential file has a valid `expiry` field with a timezone suffix (e.g., `"2026-06-17T17:41:40+00:00"`), `Credentials.from_authorized_user_file()` fails with:
+```
+Error: unconverted data remains: +00:00
+```
+
+This is **not** an `invalid_grant` — the token itself is valid. The Google OAuth library's `strptime` parser simply doesn't handle the `+00:00` suffix.
+
+**Diagnosis:**
+```bash
+python3 -c "
+import json
+d = json.load(open('/root/.google_workspace_mcp/credentials/<email>.json'))
+print('expiry:', repr(d.get('expiry')))
+print('access_token present:', bool(d.get('token')))
+"
+```
+
+**Fix:** Strip the timezone suffix from the `expiry` field:
+```python
+import json
+from pathlib import Path
+for email in ['jared.zimmerman@gmail.com', 'mx.indigo.karasu@gmail.com']:
+    p = Path(f'/root/.google_workspace_mcp/credentials/{email}.json')
+    if not p.exists():
+        continue
+    d = json.loads(p.read_text())
+    old = d.get('expiry')
+    if old and '+' in str(old):
+        d['expiry'] = old[:19]
+        p.write_text(json.dumps(d, indent=2))
+        print(f'{email}: fixed {old} -> {d["expiry"]}')
+```
+
+After fixing, the scan should proceed normally. The refreshed token will get a new `expiry` field — check if it includes the suffix again on subsequent runs.
