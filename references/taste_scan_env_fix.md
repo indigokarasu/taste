@@ -50,15 +50,23 @@ grep "Path.home()" "$SCRIPT"  # should return nothing
 
 ```bash
 cd <hermes-root>/commons/data/ocas-taste && \
-  <hermes-root>/commons/data/ocas-taste/venv/bin/python3 \
+  <hermes-install>/.venv/bin/python3.13 \
   <hermes-root>/skills/ocas-taste/scripts/taste_scan.py \
   scan-historical 1
 ```
 
-Expected output: `Initialized Gmail and Calendar with google-workspace-user.json` followed by message processing counts.
+**NOTE:** Use `<hermes-install>/.venv/bin/python3.13` (not the ocas-taste venv's Python 3.14) because `googleapiclient` is not available for Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
 
 ## Notes
 
 - These fixes are idempotent — safe to run multiple times
 - The `cross-profile` write guard blocks `patch`/`write_file` on files in `~/.hermes/skills/` from the indigo profile. Use `terminal()` with `sed` to bypass.
 - If the skill is updated from GitHub (`taste.update`), these patches may be overwritten and need to be re-applied.
+- **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-install>/.venv/bin/python3.13`), never with the ocas-taste venv's Python 3.14.or Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
+
+  ## Notes
+
+  - These fixes are idempotent — safe to run multiple times
+  - The `cross-profile` write guard blocks `patch`/`write_file` on files in `~/.hermes/skills/` from the indigo profile. Use `terminal()` with `sed` to bypass.
+  - If the skill is updated from GitHub (`taste.update`), these patches may be overwritten and need to be re-applied.
+  - **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-install>/.venv/bin/python3.13`), never with the ocas-taste venv's Python 3.14.
