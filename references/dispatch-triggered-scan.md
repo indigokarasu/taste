@@ -1,4 +1,4 @@
-# Dispatch-Triggered Incremental Scan — 2026-06-25
+# Dispatch-Triggered Incremental Scan — 2026-06-27 (updated)
 
 **Trigger:** Dispatcher fires `taste_new_data` with signal count changes. Runs as part of a multi-skill dispatch wave.
 
@@ -17,6 +17,7 @@ Output: JSON with `signals_created`, `cancellations`, `services_scanned`, plus d
 - Fourth run (multi-skill dispatch wave #71, ~04:24Z): token repair (both accounts timezone suffix again) → 2 signals (Next Level VG $76.66 + Lavash $64.60). **Combined repair + scan in single `terminal()` call succeeded** — chained with `&&` in one invocation to avoid OAuth refresh race condition.
 - Fifth run (dispatch #73, 2026-06-25T05:13Z): token repair (both accounts timezone suffix — 6th+ consecutive scan requiring repair) → 2 signals (Next Level VG $76.66 + Lavash $64.60). All pipelines clean.
 - Sixth run (dispatch #108, 2026-06-25T16:16Z): token repair (both accounts timezone suffix — 7th+ consecutive) → 1 signal (Next Level VG $76.66). Three-category dispatch (email + journals + taste). Email: 0 escalations. Journals: all clean. Taste: 1 signal.
+- Seventh run (dispatch wave, 2026-06-27T17:15Z): token repair (both accounts timezone suffix — pattern holds 12+ days running) → 0 signals. Three-category dispatch (email + journals + taste). Email: all 5 threads informational/self-sent. Journals: pre-existing wave journal resolved. Taste: 0 new signals across 9 services.
 
 ## Integration with Dispatch
 
