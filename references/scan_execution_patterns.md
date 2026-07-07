@@ -7,37 +7,41 @@ Concrete command patterns for running taste scans, verified 2026-06-23.
 ```bash
 # Pre-flight: validate token (see "Pre-scan token repair checklist" section)
 cd /root/.hermes/commons/data/ocas-taste && \
-  /root/hermes-agent/.venv/bin/python3.13 \
-  /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
-  scan-historical 365 2>&1
-```
+  ## Historical email scan (365 days)
 
-**Output:** JSON to stdout with `signals_created`, `cancellations`, `services_scanned`, `total_messages_processed`.
+  ```bash
+  # Pre-flight: validate token (see "Pre-scan token repair checklist" section)
+  cd /root/.hermes/profiles/indigo/commons/data/ocas-taste && \
+    /usr/bin/python3 \
+    /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
+    scan-historical 365 2>&1
+  ```
 
-**Post-run verification:**
-```bash
-wc -l /root/.hermes/commons/data/ocas-taste/signals.jsonl
-```
+  **Output:** JSON to stdout with `signals_created`, `cancellations`, `services_scanned`, `total_messages_processed`.
 
-**Confirmed 2026-06-23:** 599 messages processed, 142 signals created, 2 cancellations. Services: doordash, instacart, good_eggs, tock, opentable, yelp, amazon, hotels.
+  **Confirmed 2026-06-23:** 599 messages processed, 142 signals created, 2 cancellations. Services: doordash, instacart, good_eggs, tock, opentable, yelp, amazon, hotels.
 
-**Note:** `scan-historical` is email-only. For the full pipeline (Styx delta + enrichment), use `taste_full_enrich.py`. Use `scan-historical` when the user explicitly wants broad historical email coverage, or when OAuth for calendar is broken but Gmail works.
+  **Note:** `scan-historical` is email-only. For the full pipeline (Styx delta + enrichment), use `taste_full_enrich.py`. Use `scan-historical` when the user explicitly wants broad historical email coverage, or when OAuth for calendar is broken but Gmail works.
 
-## Historical calendar scan
+  **Python runtime:** Use `/usr/bin/python3` (system Python 3.14 with `googleapiclient`). NOT `/root/hermes-agent/.venv/bin/python3.13` — path does not exist on this profile. NOT ocas-taste venv Python — lacks googleapiclient. Confirmed 2026-06-29: `/usr/bin/python3` works reliably.
 
-```bash
-/root/hermes-agent/.venv/bin/python3.13 \
-  /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
-  scan-calendar 365 2>&1
-```
+  ## Historical calendar scan
 
-## Incremental daily scan (24h)
+  ```bash
+  cd /root/.hermes/profiles/indigo/commons/data/ocas-taste && \
+    /usr/bin/python3 \
+    /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
+    scan-calendar 365 2>&1
+  ```
 
-```bash
-/root/hermes-agent/.venv/bin/python3.13 \
-  /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
-  scan-incremental 24 2>&1
-```
+  ## Incremental daily scan (24h)
+
+  ```bash
+  cd /root/.hermes/profiles/indigo/commons/data/ocas-taste && \
+    /usr/bin/python3 \
+    /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py \
+    scan-incremental 24 2>&1
+  ```
 
 ## OAuth token accounts
 
