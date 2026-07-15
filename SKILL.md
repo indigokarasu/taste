@@ -160,6 +160,19 @@ See `references/styx_delta.md` for the full procedure including:
 - ItemRecord and ConsumptionSignal schema
 - Reporting format
 
+**⚠️ CRITICAL — dedup by canonical `place_id`, NOT by name (incident 2026-07-15):**
+When checking whether a Styx transaction is "already in Taste", compare the **Google
+`place_id`** returned from Places textsearch against existing items' `place_id`. Do NOT
+dedup by normalized `name` or `item_id` — near-names like `"Taco Bell"` vs `"Taco Bell
+Cantina"` share one `place_id`, and name-only checks silently create duplicate items
++ signals. If an existing item already has that `place_id`, **LINK** the signal to it
+(bump `visit_count`, append `visit_dates`, recompute `avg_amount`) — create no item.
+Otherwise create exactly one canonical item for that `place_id`.
+**Always run `scripts/verify_taste_delta.py` after the write.** A "N created" success
+return is testimony, not proof — verify asserted zero `place_id` collisions, zero
+`item_id` duplicates, zero orphaned signals, zero `(merchant,date)` styx dupes. Full
+recipe + reconciliation: `references/styx_delta_placeid_dedup.md`.
+
 ### Enrichment (`taste.enrich.item`)
 
 **Purpose:** Add taste-relevant attributes (cuisine, price, neighborhood, vibe) to items via Google Maps.
@@ -277,7 +290,7 @@ Two separate calls WILL fail. The suffix reappears on EVERY OAuth refresh — re
 **Combined repair script** (run before every scan — dispatch or cron):
 
 ```bash
-python3 -c \"
+python3 -c "
 import json, time
 from pathlib import Path
 for email in ['jared.zimmerman@gmail.com', 'mx.indigo.karasu@gmail.com']:
@@ -287,12 +300,21 @@ for email in ['jared.zimmerman@gmail.com', 'mx.indigo.karasu@gmail.com']:
     expiry = d.get('expiry', '')
     if isinstance(expiry, float):
         d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time() + 3600))
-    elif isinstance(expiry, str) and ('+' in expiry or expiry.endswith('Z')):
-        d['expiry'] = expiry[:19]
-    else: continue
-    with open(path, 'w') as f: json.dump(d, f, indent=2)
-\"
+    elif isinstance(expiry, str):
+        s = expiry
+        if '+' in s: s = s[:s.index('+')]
+        elif s.endswith('Z'): s = s[:-1]
+        if '.' in s: s = s[:s.index('.')]   # strip fractional seconds (e.g. '.811606')
+        if s != expiry:
+            d['expiry'] = s
+            with open(path, 'w') as f: json.dump(d, f, indent=2)
+            print('repaired', email, repr(expiry), '->', s)
 ```
+
+> Three failure modes are now handled: float expiry, `+00:00`/`Z` suffix, and
+> **microsecond suffix (`.811606`)** — the latter is NOT matched by the `+`/`Z` check
+> and will still crash `from_authorized_user_file()` with `unconverted data remains`.
+> Confirmed real on 2026-07-15 (Jared's token).
 
 ## Command Pattern
 
@@ -317,6 +339,7 @@ See `references/self-update-taste.md`.
 - **Styx delta works without Google OAuth** — The Styx→Taste delta ingestion uses GOOGLE_PLACES_API_KEY (env var), not OAuth tokens. It runs successfully even when email/calendar auth is broken. Confirmed 2026-05-30: 124 venues enriched, 188 signals created, $8,174 tracked — all while OAuth token was 0 bytes.
 - **Styx merchant names are truncated; Places handles it** — Styx truncates merchant names to ~15 characters. Google Places fuzzy text search resolves these correctly — tested at 100% match rate (124/124). Use `{merchant_name} restaurant` as the query, take the first result. See `references/styx_delta.md`.
 - **Styx truncation creates duplicate items** — The enrichment pipeline creates separate items for each truncated Styx variant instead of canonicalizing via Google Places. This results in duplicate items (e.g., Milos split across 3 items, Kasa Indian Eatery across 5). The dedup in `styx_delta.md` Step 2 only checks `name.lower().strip()` (raw Styx name), not Places canonical name/address. **Fix:** Batch Places search first, group by place_id, create ONE ItemRecord per canonical venue. See `references/styx_truncation_fix.md`. Cleanup script: `scripts/fix_styx_dedup.py` (always run `--dry-run` first).
+- **Styx delta creates `place_id`-sibling duplicates if dedup checks name only (incident 2026-07-15)** — Near-name venues already in Taste (`"Taco Bell"` vs `"Taco Bell Cantina"`, `"Sidewalk Juice"` SF vs `"Sidewalk Juice- San Mateo"`) share one Google `place_id`. If the pre-check compares `name`/`item_id` instead of `place_id`, the ingestion writes duplicate items + signals and still reports "success". **Rule:** dedup by canonical `place_id`; LINK the signal when the place exists; create exactly one item otherwise. **Verification is mandatory and separate from the ingestion return** — run `scripts/verify_taste_delta.py` (asserts zero `place_id` collisions, zero `item_id` dupes, zero orphaned signals, zero `(merchant,date)` styx dupes). Reconciliation recipe: `references/styx_delta_placeid_dedup.md`. Note this is a DIFFERENT shape from `fix_styx_dedup.py` (truncation variants), which will not catch it.
 - **Signal-item linkage is broken** — Styx-sourced signals have `item_id=None`. They use `venue_name` (raw truncated Styx name) not `item_id` for linkage to items. The item-signal graph is broken: recommendations can't properly aggregate signal strength per venue. After creating canonical items, signals must be updated to set `item_id` to the canonical item_id. See `references/styx_truncation_fix.md`.
 - **execute_code is blocked in cron mode** — Cron jobs run without a user present to approve `execute_code`. Use `terminal()` with heredoc (`python3 << 'PYEOF'`) for inline Python, or invoke standalone scripts via `terminal()` / `skill_manage(action='write_file')`.
 - **Legacy data path is stale** — An old data path may exist but is STALE. Active data is ONLY under `{agent_root}/commons/data/ocas-taste/`. Scripts referencing the old path will read outdated data.
@@ -395,3 +418,5 @@ See `references/self-update-taste.md`.
 | `scripts/taste_signals_dedup.py` | Signal deduplication — run after enrichment passes. **Actual path:** `/root/.hermes/profiles/indigo/commons/data/ocas-taste/scripts/taste_signals_dedup.py`. Takes no arguments. Confirmed working 2026-06-18. |
 | `scripts/taste_cleanup_and_enrich.py` | Cross-source dedup + retry failed enrichments |
 | `scripts/fix_styx_dedup.py` | Merge Styx truncation duplicates + remap signals; always run `--dry-run` first |
+| `scripts/verify_taste_delta.py` | **Run after every Styx delta write.** Asserts zero `place_id` collisions, zero `item_id` dupes, zero orphaned signals, zero `(merchant,date)` styx dupes. Exits non-zero on violation. `--expect-place-ids` claims exactly-one-item per place_id. |
+| `references/styx_delta_placeid_dedup.md` | `place_id`-sibling duplicate incident (2026-07-15): why name-only dedup fails, the canonical-`place_id` rule, and the manual reconciliation recipe |
