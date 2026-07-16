@@ -18,6 +18,12 @@ import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 taste_menu_monitor.py")
+    sys.exit(0)
+
+
 DATA_DIR = Path("/root/.hermes/profiles/indigo/commons/data/ocas-taste")
 SNAPSHOTS_DIR = DATA_DIR / "menu_snapshots"
 REPORTS_DIR = DATA_DIR / "menu_reports"

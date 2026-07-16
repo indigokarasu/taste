@@ -17,6 +17,12 @@ import urllib.request
 from collections import defaultdict
 from datetime import datetime
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 taste_cleanup_and_enrich.py")
+    sys.exit(0)
+
+
 TASTE_DIR = '/root/.hermes/commons/data/ocas-taste'
 TASTE_ITEMS = f'{TASTE_DIR}/items.jsonl'
 TASTE_SIGNALS = f'{TASTE_DIR}/signals.jsonl'

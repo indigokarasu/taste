@@ -10,6 +10,12 @@ import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 spotify_sync_mcp.py")
+    sys.exit(0)
+
+
 # Paths
 AGENT_ROOT = Path(os.environ.get("AGENT_ROOT", Path.home() / ".hermes"))
 DATA_DIR = AGENT_ROOT / "commons/data/ocas-taste"

@@ -8,6 +8,13 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta
+import sys
+
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 spotify_history_puller.py")
+    sys.exit(0)
+
 
 def get_access_token():
     """Exchange refresh token for access token."""

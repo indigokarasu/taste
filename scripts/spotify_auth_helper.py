@@ -23,6 +23,12 @@ import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 spotify_auth_helper.py")
+    sys.exit(0)
+
+
 # Config
 AGENT_ROOT = Path(os.environ.get("HERMES_HOME") or os.environ.get("OCAS_AGENT_ROOT") or Path.home() / ".hermes")
 DATA_DIR = AGENT_ROOT / "commons/data/ocas-taste"

@@ -17,6 +17,12 @@ import json
 import sys
 from pathlib import Path
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 dispatch_taste_dedup.py")
+    sys.exit(0)
+
+
 DATA_DIR = Path("/root/.hermes/profiles/indigo/commons/data/ocas-taste")
 SIGNALS_FILE = DATA_DIR / "signals.jsonl"
 

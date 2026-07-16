@@ -10,6 +10,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import base64
+import sys
+
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 taste_scan.py")
+    sys.exit(0)
+
 
 # Google API imports
 try:
