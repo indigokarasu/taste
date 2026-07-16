@@ -13,6 +13,13 @@ license: MIT
 metadata:
   author: Indigo Karasu (indigokarasu)
   version: 3.6.4
+  hermes:
+    category: data-science
+    tags:
+    - preferences
+    - recommendations
+    - consumption-signals
+    - OCAS-core
 name: ocas-taste
 source: https://github.com/indigokarasu/taste
 tags:
@@ -119,26 +126,26 @@ All workflows follow a consistent pattern: **extract → dedup → enrich → re
 **Purpose:** Extract consumption signals from email and calendar, deduplicate, and queue for enrichment.
 
 **Pre-flight:**
-1. Load Google OAuth credentials per `references/api_auth.md`. Use the user profile for email; fall back to agent profile only for calendar.
-2. **Repair token expiry format:** Before validating tokens, repair any timezone suffix or float expiry using the combined script in `references/token-repair.md`. This must be done immediately before the scan to avoid race conditions with token refresh.
-3. If token file is 0 bytes or token still fails with `invalid_grant` after repair, follow `references/cron_failure.md` — don't silently skip. Report auth failure in output.
-4. **Gmail/Calendar access check:** When accessing Gmail or Google Calendar, first verify connectivity. If access fails, fall back to standalone `google_auth.py` scripts. A 0-byte token produces an explicit error with re-auth URL. When using standalone scripts, the helper may silently fall back to a different account — always check which account was actually loaded.
+- [ ] Load Google OAuth credentials per `references/api_auth.md`. Use the user profile for email; fall back to agent profile only for calendar.
+- [ ] **Repair token expiry format:** Before validating tokens, repair any timezone suffix or float expiry using the combined script in `references/token-repair.md`. This must be done immediately before the scan to avoid race conditions with token refresh.
+- [ ] If token file is 0 bytes or token still fails with `invalid_grant` after repair, follow `references/cron_failure.md` — don't silently skip. Report auth failure in output.
+- [ ] **Gmail/Calendar access check:** When accessing Gmail or Google Calendar, first verify connectivity. If access fails, fall back to standalone `google_auth.py` scripts. A 0-byte token produces an explicit error with re-auth URL. When using standalone scripts, the helper may silently fall back to a different account — always check which account was actually loaded.
 
 **Extract:**
-4. Build Gmail query per configured service. Correct form: `({sender_query}) after:{date_str}` — wrong form returns every email after the date.
-5. Enumerate writable calendars via `calendarList().list()` (not just `primary`). Filter `accessRole in ('owner', 'writer')`.
-6. Extract structured data into ExtractionRecords. Validate: drop records with empty `venue_name` or `from` addresses not matching configured `sender_patterns`.
+- [ ] Build Gmail query per configured service. Correct form: `({sender_query}) after:{date_str}` — wrong form returns every email after the date.
+- [ ] Enumerate writable calendars via `calendarList().list()` (not just `primary`). Filter `accessRole in ('owner', 'writer')`.
+- [ ] Extract structured data into ExtractionRecords. Validate: drop records with empty `venue_name` or `from` addresses not matching configured `sender_patterns`.
 
 **Normalize:**
-7. Strip `Reservation at ` prefix and city suffixes (` - San Francisco`, ` - SF`, etc.).
-8. Apply venue-detection heuristics: exclude medical/video calls/generic meetings; include meal keywords, hotel brands, event types.
-9. Classify email_type: confirmation, reminder, update, cancellation, receipt.
+- [ ] Strip `Reservation at ` prefix and city suffixes (` - San Francisco`, ` - SF`, etc.).
+- [ ] Apply venue-detection heuristics: exclude medical/video calls/generic meetings; include meal keywords, hotel brands, event types.
+- [ ] Classify email_type: confirmation, reminder, update, cancellation, receipt.
 
 **Dedup & persist:**
-10 persist:** Wait, I think process. I need to produce a different approach:10. Cross-calendar dedup key: `{service}:{normalized_venue}:{event_date[:10]}`. Same venue on different dates = separate signals.
-11. Exclude cancelled events. Promote valid extractions to ConsumptionSignals.
-12. Create/update ItemRecords, queue unenriched items.
-13. Write journal.
+- [ ] Cross-calendar dedup key: `{service}:{normalized_venue}:{event_date[:10]}`. Same venue on different dates = separate signals.
+- [ ] Exclude cancelled events. Promote valid extractions to ConsumptionSignals.
+- [ ] Create/update ItemRecords, queue unenriched items.
+- [ ] Write journal.
 
 **Edge cases:**
 - Empty scan (no new signals): still write evidence record with `not_activity_reason: no_new_signals`.
