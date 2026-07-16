@@ -14,6 +14,12 @@ import re
 import sys
 from pathlib import Path
 
+_HELP_ARGS = {"--help", "-h"}
+if set(sys.argv[1:]) & _HELP_ARGS:
+    print((__doc__ or "").strip() or "Usage: python3 clean_signals.py")
+    sys.exit(0)
+
+
 
 GENERIC_MEAL_TITLES = frozenset({
     "breakfast", "lunch", "dinner", "brunch",
