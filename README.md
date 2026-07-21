@@ -1,7 +1,7 @@
 # taste
 
 <p align="center">
-<img src="./assets/readme/hero.svg" width="100%" alt="Taste: personalized recommendation engine — builds taste models from real consumption signals for food, travel, and shopping.">
+<img src="./assets/readme/hero.jpg" width="100%" alt="Taste: personalized recommendation engine — builds taste models from real consumption signals for food, travel, and shopping.">
 </p>
 
 taste — Taste: personalized recommendation engine — builds taste models from real consumption signals for food, travel, and shopping.
