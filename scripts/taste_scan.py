@@ -34,7 +34,7 @@ class TasteSkill:
     """Taste skill implementation for consumption signal extraction and enrichment"""
 
     def __init__(self, data_dir: str = None):
-        self.data_dir = Path(data_dir) if data_dir else Path("<hermes-root>/commons/data/ocas-taste")
+        self.data_dir = Path(data_dir) if data_dir else Path("<hermes-home>/commons/data/ocas-taste")
         self.config_file = self.data_dir / "config.json"
         self.signals_file = self.data_dir / "signals.jsonl"
         self.items_file = self.data_dir / "items.jsonl"
@@ -116,7 +116,7 @@ class TasteSkill:
         # Google Workspace MCP credentials — each account uses its own OAuth client
         token_paths = [
             Path(os.environ.get("GOOGLE_CREDS_DIR", os.path.expanduser("~/.google_workspace_mcp/credentials"))) / "operator_email.json",   # operator (user) — primary for email/calendar
-            Path("/root/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
+            Path("<google-workspace-mcp-creds>/credentials/mx.indigo.karasu@gmail.com.json"),   # Indigo Karasu (agent) — fallback
         ]
 
         for token_path in token_paths:
@@ -152,7 +152,7 @@ class TasteSkill:
         print("No Google token file found (tried all paths)")
 
         # Fall back to service account for Maps
-        service_account_path = Path("<hermes-root>/credentials/hermes-ocigcp.json")
+        service_account_path = Path("<hermes-home>/credentials/hermes-ocigcp.json")
         if service_account_path.exists():
             try:
                 scopes = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/maps']
@@ -850,7 +850,7 @@ class TasteSkill:
         if api_key:
             return api_key
         # Check .env file
-        env_path = Path("<hermes-root>/.env")
+        env_path = Path("<hermes-home>/.env")
         if env_path.exists():
             with open(env_path) as f:
                 for line in f:

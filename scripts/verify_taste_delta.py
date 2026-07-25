@@ -2,8 +2,8 @@
 """verify_taste_delta.py — integrity check after a Styx->Taste delta write.
 
 Run from the data directory:
-  cd <hermes-root>/commons/data/ocas-taste && /usr/bin/python3 \
-    <hermes-home>/skills/ocas-taste/scripts/verify_taste_delta.py
+  cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 \
+    <hermes-home>/profiles/<profile>/skills/ocas-taste/scripts/verify_taste_delta.py
 
 Asserts (exits non-zero on any violation):
   - zero duplicate item_id across items.jsonl
@@ -21,7 +21,7 @@ import sys
 import collections
 import argparse
 
-DATA = "<hermes-root>/commons/data/ocas-taste"
+DATA = "<hermes-home>/commons/data/ocas-taste"
 ITEMS = f"{DATA}/items.jsonl"
 SIGNALS = f"{DATA}/signals.jsonl"
 

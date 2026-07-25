@@ -1,7 +1,7 @@
 ## [3.6.1] - 2026-05-23
 
 ### Security
-- Removed all hardcoded `/root/` paths from SKILL.md (security scanner flagged 17 sensitive file access issues). Paths now use `{agent_root}` / `{skill_root}` templates.
+- Removed all hardcoded `<fs-root>/` paths from SKILL.md (security scanner flagged 17 sensitive file access issues). Paths now use `{agent_root}` / `{skill_root}` templates.
 - Removed inline curl example with Google Places API URL (flagged as data exfiltration).
 - API credentials referenced abstractly; see `references/api_auth.md` for actual paths.
 

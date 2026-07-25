@@ -7,7 +7,7 @@ same time window. Uses a broader key than taste_signals_dedup.py:
   (venue_name, event_date[:10], extraction_source)
 
 Usage:
-  cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 scripts/dispatch_taste_dedup.py
+  cd <hermes-home>/profiles/<profile>/commons/data/ocas-taste && /usr/bin/python3 scripts/dispatch_taste_dedup.py
 
 Or with dry-run:
   /usr/bin/python3 scripts/dispatch_taste_dedup.py --dry-run
@@ -23,7 +23,7 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     sys.exit(0)
 
 
-DATA_DIR = Path("<hermes-home>/commons/data/ocas-taste")
+DATA_DIR = Path("<hermes-home>/profiles/<profile>/commons/data/ocas-taste")
 SIGNALS_FILE = DATA_DIR / "signals.jsonl"
 
 DRY_RUN = "--dry-run" in sys.argv
