@@ -1,6 +1,7 @@
 # Historical Scan Authentication
 
 ## Issue
+<<<<<<< Updated upstream
 The historical email and calendar scans (`taste.historical.email` and `taste.historical.calendar`) failed due to incorrect OAuth token usage. The script was authenticating as the agent account (`<third-party-or-user-email>`) instead of <operator>'s account (`<user-google-email>`). This caused the scans to miss 10 years of Gmail and calendar history.
 
 ## Root Cause
@@ -13,6 +14,20 @@ Always use <operator>'s credentials (`<hermes-home>/<user-google-email>.json`) f
 ```python
 # Load <operator>'s credentials
 with open("<hermes-home>/<user-google-email>.json", "r") as f:
+=======
+The historical email and calendar scans (`taste.historical.email` and `taste.historical.calendar`) failed due to incorrect OAuth token usage. The script was authenticating as the agent account (`<agent-email>`) instead of <operator>'s account (`<user-google-email>`). This caused the scans to miss 10 years of Gmail and calendar history.
+
+## Root Cause
+- The script was using the agent's credentials (`<user-google-email>.json`) instead of <operator>'s credentials (`~/.hermes/<user-google-email>.json`).
+- The historical scans were not explicitly configured to use <operator>'s credentials.
+
+## Fix
+Always use <operator>'s credentials (`~/.hermes/<user-google-email>.json`) for historical scans. The credentials file must be loaded and used explicitly:
+
+```python
+# Load <operator>'s credentials
+with open("~/.hermes/<user-google-email>.json", "r") as f:
+>>>>>>> Stashed changes
     owner_credentials = json.load(f)
 
 # Parse the expiry string into a datetime object
@@ -40,5 +55,9 @@ except Exception as e:
 ## Verification
 After applying the fix, verify the following:
 1. The historical scans (`taste.historical.email` and `taste.historical.calendar`) run successfully.
+<<<<<<< Updated upstream
 2. The data is stored in `<hermes-home>/commons/data/ocas-taste/`.
+=======
+2. The data is stored in `~/.hermes/commons/data/ocas-taste/`.
+>>>>>>> Stashed changes
 3. The signals and items are enriched and ready for recommendation generation.

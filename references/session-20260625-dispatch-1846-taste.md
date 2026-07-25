@@ -8,7 +8,11 @@
 - Totals: 4,747 signals | 1,318 items
 
 ## Styx Universal Enrichment
+<<<<<<< Updated upstream
 - Script: `python3 <hermes-home>/profiles/indigo/skills/ocas-styx/scripts/styx_universal_enrich.py --limit 0`
+=======
+- Script: `python3 ~/.hermes/profiles/indigo/skills/ocas-styx/scripts/styx_universal_enrich.py --limit 0`
+>>>>>>> Stashed changes
 - 31 merchants enriched (new: Taco Los Altos, Philz Coffee, lululemon SF, Extreme Pizza, Serrano's Pizza, Etsy shops, Heritage Thai Spa, Berkeley Bowl, etc.)
 - 8 failed (non-placeable): Kalshi, Lugg Hold, Querytracker, Citi Autopay, Harbor View HOA, Livykate Clothing, Alves Cleaning, SP LIVYKATE
 - Remaining unenriched non-financial: 69 (all expected non-placeable)

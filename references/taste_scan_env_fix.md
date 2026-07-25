@@ -13,21 +13,37 @@ When `taste_scan.py` runs under the `indigo` Hermes profile (e.g., from a cron j
 Run these commands from any directory (paths are absolute):
 
 ```bash
+<<<<<<< Updated upstream
 SCRIPT="<hermes-home>/skills/ocas-taste/scripts/taste_scan.py"
 
 # 1. Fix token paths (relative -> absolute)
 sed -i 's|Path("\[Google OAuth credentials\]<user-google-email>.json")|Path("<gworkspace-creds>/credentials/<user-google-email>.json")|' "$SCRIPT"
 sed -i 's|Path("\[Google OAuth credentials\]<third-party-or-user-email>.json")|Path("<gworkspace-creds>/credentials/<third-party-or-user-email>.json")|' "$SCRIPT"
+=======
+SCRIPT="~/.hermes/skills/ocas-taste/scripts/taste_scan.py"
+
+# 1. Fix token paths (relative -> absolute)
+sed -i 's|Path("\[Google OAuth credentials\]<user-google-email>.json")|Path("<gworkspace-creds>/credentials/<user-google-email>.json")|' "$SCRIPT"
+sed -i 's|Path("\[Google OAuth credentials\]<agent-email>.json")|Path("<gworkspace-creds>/credentials/<agent-email>.json")|' "$SCRIPT"
+>>>>>>> Stashed changes
 
 # 2. Fix OAuth scopes (write -> readonly)
 sed -i "s|'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/calendar'|'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.events.readonly', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly'|" "$SCRIPT"
 
 # 3. Fix data_dir (Path.home() -> hardcoded)
+<<<<<<< Updated upstream
 sed -i 's|self.data_dir = Path(data_dir) if data_dir else Path.home() / ".hermes" / "commons" / "data" / "ocas-taste"|self.data_dir = Path(data_dir) if data_dir else Path("<hermes-home>/commons/data/ocas-taste")|' "$SCRIPT"
 
 # 4. Fix other Path.home() references
 sed -i 's|service_account_path = Path.home() / ".hermes" / "credentials" / "hermes-ocigcp.json"|service_account_path = Path("<hermes-home>/credentials/hermes-ocigcp.json")|' "$SCRIPT"
 sed -i 's|env_path = Path.home() / ".hermes" / ".env"|env_path = Path("<hermes-home>/.env")|' "$SCRIPT"
+=======
+sed -i 's|self.data_dir = Path(data_dir) if data_dir else Path.home() / ".hermes" / "commons" / "data" / "ocas-taste"|self.data_dir = Path(data_dir) if data_dir else Path("~/.hermes/commons/data/ocas-taste")|' "$SCRIPT"
+
+# 4. Fix other Path.home() references
+sed -i 's|service_account_path = Path.home() / ".hermes" / "credentials" / "hermes-ocigcp.json"|service_account_path = Path("~/.hermes/credentials/hermes-ocigcp.json")|' "$SCRIPT"
+sed -i 's|env_path = Path.home() / ".hermes" / ".env"|env_path = Path("~/.hermes/.env")|' "$SCRIPT"
+>>>>>>> Stashed changes
 ```
 
 ## Verification
@@ -49,9 +65,15 @@ grep "Path.home()" "$SCRIPT"  # should return nothing
 ## Test Run
 
 ```bash
+<<<<<<< Updated upstream
 cd <hermes-home>/commons/data/ocas-taste && \
   <hermes-venv>/bin/python3.13 \
   <hermes-home>/skills/ocas-taste/scripts/taste_scan.py \
+=======
+cd ~/.hermes/commons/data/ocas-taste && \
+  <hermes-venv>/bin/python3.13 \
+  ~/.hermes/skills/ocas-taste/scripts/taste_scan.py \
+>>>>>>> Stashed changes
   scan-historical 1
 ```
 
@@ -69,4 +91,8 @@ cd <hermes-home>/commons/data/ocas-taste && \
   - These fixes are idempotent — safe to run multiple times
   - The `cross-profile` write guard blocks `patch`/`write_file` on files in `~/.hermes/skills/` from the indigo profile. Use `terminal()` with `sed` to bypass.
   - If the skill is updated from GitHub (`taste.update`), these patches may be overwritten and need to be re-applied.
+<<<<<<< Updated upstream
   - **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-venv>/bin/python3.13`), never with the ocas-taste venv's Python 3.14.
+=======
+  - **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-venv>/bin/python3.13`), never with the ocas-taste venv's Python 3.14.
+>>>>>>> Stashed changes

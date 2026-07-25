@@ -41,7 +41,11 @@ The `chronicle-linkage` skill is the canonical home for the generic API, but the
 call shapes that worked inline this session are recorded here so the next pass doesn't
 re-derive them:
 
+<<<<<<< Updated upstream
 - **Load engine:** `sys.path.insert(0,"<hermes-home>/plugins/chronicle")` then
+=======
+- **Load engine:** `sys.path.insert(0,"~/.hermes/plugins/chronicle")` then
+>>>>>>> Stashed changes
   `from engine.store import MemoryStore; from engine.reducer import Reducer;
   from engine.capture import CaptureEngine`.
   `store=MemoryStore(CHRON); store._conn().execute("PRAGMA busy_timeout=90000")`
