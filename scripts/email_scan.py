@@ -23,11 +23,11 @@ if set(sys.argv[1:]) & _HELP_ARGS:
 from google_auth import get_service
 
 
-service = get_service('gmail', 'v1', ['https://www.googleapis.com/auth/gmail.modify'], account='google-workspace-user')
+service = get_service('gmail', 'v1', ['https://www.googleapis.com/auth/gmail.modify'], account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
 
 def get_calendar_service():
     """Get authenticated Calendar service."""
-    return get_service('calendar', 'v3', ['https://www.googleapis.com/auth/calendar'], account='google-workspace-user')
+    return get_service('calendar', 'v3', ['https://www.googleapis.com/auth/calendar'], account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
 
 def normalize_venue_name(name: str) -> str:
     """Normalize venue name for deduplication."""

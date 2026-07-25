@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to run historical email and calendar scans with owner's credentials.
+Script to run historical email and calendar scans with the operator's credentials.
 """
 
 import os
@@ -21,9 +21,9 @@ from google_auth import get_gmail_service, get_calendar_service
 
 
 def run_historical_scans():
-    """Run the historical email and calendar scans with owner's credentials."""
-    gmail_service = get_gmail_service(account='google-workspace-user')
-    calendar_service = get_calendar_service(account='google-workspace-user')
+    """Run the historical email and calendar scans with the operator's credentials."""
+    gmail_service = get_gmail_service(account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
+    calendar_service = get_calendar_service(account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
 
     # Run the historical email scan
     print("Running historical email scan...")

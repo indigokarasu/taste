@@ -23,13 +23,13 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     sys.exit(0)
 
 
-TASTE_DIR = '<hermes-root>/commons/data/ocas-taste'
+TASTE_DIR = 'os.path.expanduser("~/.hermes")/commons/data/ocas-taste'
 TASTE_ITEMS = f'{TASTE_DIR}/items.jsonl'
 TASTE_SIGNALS = f'{TASTE_DIR}/signals.jsonl'
 
 def load_api_key():
     env = {}
-    with open('<hermes-root>/secrets/plaid.env') as f:
+    with open('os.path.expanduser("~/.hermes")/secrets/plaid.env') as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
