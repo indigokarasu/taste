@@ -69,7 +69,7 @@ new_items = [it for it in items if it['item_id'] not in merged_member_ids] + can
   `external_provider='taste'` and `external_ref` == that item's `item_id`.
 
 ## Runnables
-Reusable script: `/root/indigo_tmp/phase4_merge.py` (Union-Find + canonical pick +
+Reusable script: `<fs-root>/indigo_tmp/phase4_merge.py` (Union-Find + canonical pick +
 Chronicle `merged_into` + `locations` fact; `--apply` writes, default is dry-run).
 Pair with `phase1_people.py` / `phase2_places.py` / `phase3_enrich.py` for the full
 Taste↔Chronicle linkage pipeline.

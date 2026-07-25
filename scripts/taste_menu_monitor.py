@@ -24,7 +24,7 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     sys.exit(0)
 
 
-DATA_DIR = Path("<hermes-home>/commons/data/ocas-taste")
+DATA_DIR = Path("<hermes-home>/profiles/<profile>/commons/data/ocas-taste")
 SNAPSHOTS_DIR = DATA_DIR / "menu_snapshots"
 REPORTS_DIR = DATA_DIR / "menu_reports"
 CONFIG_FILE = DATA_DIR / "menu_monitor.json"

@@ -2,7 +2,7 @@
 
 ## What's backed up
 
-All taste and styx data is backed up to GitHub LFS (`/root/indigo-repo`):
+All taste and styx data is backed up to GitHub LFS (`<fs-root>/indigo-repo`):
 
 | File | Source | Description |
 |------|--------|-------------|
@@ -18,11 +18,11 @@ All taste and styx data is backed up to GitHub LFS (`/root/indigo-repo`):
 ## What's NOT backed up
 
 - `state.db` (14G) — too large for GitHub LFS
-- `/root/commons/data/ocas-taste/` — stale copy, removed
+- `<commons>/data/ocas-taste/` — stale copy, removed
 
 ## Backup script
 
-bash /root/indigo-repo/scripts/backup_all_hermes_data.sh
+bash <repo-root>/scripts/backup_all_hermes_data.sh
 
 Runs daily at 03:00 via Backup Hermes Sessions to GitHub cron job.
 
@@ -32,7 +32,7 @@ Git LFS tracks: *.jsonl, *.db, *.lbug, *.sqlite3, *.tar.gz
 
 ## Restore from backup
 
-cd /root/indigo-repo
+cd <fs-root>/indigo-repo
 git lfs pull
 cp data/styx.db <hermes-home>/data/styx.db
 cp data/ocas-taste-*.jsonl <hermes-home>/commons/data/ocas-taste/
@@ -40,5 +40,5 @@ cp data/transactions.db <hermes-home>/data/transactions.db
 
 ## Disk space management
 
-- Old local backups in /root/backup/ are cleaned up automatically (keep 3 days)
+- Old local backups in <fs-root>/backup/ are cleaned up automatically (keep 3 days)
 - state.db (14G) is never backed up - it's session state that can be regenerated

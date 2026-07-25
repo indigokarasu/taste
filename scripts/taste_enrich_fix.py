@@ -26,12 +26,12 @@ import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
 
-TASTE_DIR = '<hermes-home>/commons/data/ocas-taste'
+TASTE_DIR = '<hermes-home>/profiles/<profile>/commons/data/ocas-taste'
 ITEMS_FILE = f'{TASTE_DIR}/items.jsonl'
 
 def load_api_key():
     """Read GOOGLE_PLACES_API_KEY from plaid.env."""
-    with open('<hermes-root>/secrets/plaid.env') as f:
+    with open('<hermes-home>/secrets/plaid.env') as f:
         for line in f:
             line = line.strip()
             if line.startswith('GOOGLE_PLACES_API_KEY='):
@@ -146,7 +146,7 @@ def main():
 
     api_key = load_api_key()
     if not api_key:
-        print("ERROR: GOOGLE_PLACES_API_KEY not found in <hermes-root>/secrets/plaid.env")
+        print("ERROR: GOOGLE_PLACES_API_KEY not found in <hermes-home>/secrets/plaid.env")
         sys.exit(1)
 
     items = get_unenriched_items()
