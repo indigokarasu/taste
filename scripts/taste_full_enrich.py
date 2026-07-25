@@ -22,16 +22,16 @@ import urllib.request
 from collections import defaultdict
 from datetime import datetime
 
-STYX_DB = '<hermes-root>/data/styx.db'
-TXN_DB = '<hermes-root>/data/transactions.db'
-TASTE_DIR = '<hermes-root>/commons/data/ocas-taste'
+STYX_DB = 'os.path.expanduser("~/.hermes")/data/styx.db'
+TXN_DB = 'os.path.expanduser("~/.hermes")/data/transactions.db'
+TASTE_DIR = 'os.path.expanduser("~/.hermes")/commons/data/ocas-taste'
 TASTE_ITEMS = f'{TASTE_DIR}/items.jsonl'
 TASTE_SIGNALS = f'{TASTE_DIR}/signals.jsonl'
 EXTRACTIONS = f'{TASTE_DIR}/extractions.jsonl'
 
 def load_api_key():
     env = {}
-    with open('<hermes-root>/secrets/plaid.env') as f:
+    with open('os.path.expanduser("~/.hermes")/secrets/plaid.env') as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
