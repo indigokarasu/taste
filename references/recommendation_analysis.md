@@ -6,12 +6,12 @@ Step-by-step procedure for generating a recommendation from Taste data. This is 
 
 ### 1. Load Data
 
-Always load all three files from `<hermes-root>/commons/data/ocas-taste/`:
+Always load all three files from `<hermes-home>/commons/data/ocas-taste/`:
 - `signals.jsonl` — all consumption signals
 - `items.jsonl` — all item records with enrichment data
 - `config.json` — strength model params + user preferences
 
-Use the venv Python: `<hermes-root>/commons/data/ocas-taste/venv/bin/python3`
+Use the venv Python: `<hermes-home>/commons/data/ocas-taste/venv/bin/python3`
 
 ### 2. Compute Effective Strengths Per Item
 

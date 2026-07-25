@@ -1,18 +1,18 @@
 # Historical Scan Authentication
 
 ## Issue
-The historical email and calendar scans (`taste.historical.email` and `taste.historical.calendar`) failed due to incorrect OAuth token usage. The script was authenticating as the agent account (`mx.indigo.karasu@gmail.com`) instead of owner's account (`google-workspace-user`). This caused the scans to miss 10 years of Gmail and calendar history.
+The historical email and calendar scans (`taste.historical.email` and `taste.historical.calendar`) failed due to incorrect OAuth token usage. The script was authenticating as the agent account (`<third-party-or-user-email>`) instead of <operator>'s account (`<user-google-email>`). This caused the scans to miss 10 years of Gmail and calendar history.
 
 ## Root Cause
-- The script was using the agent's credentials (`google-workspace-user.json`) instead of owner's credentials (`<hermes-root>/google-workspace-user.json`).
-- The historical scans were not explicitly configured to use owner's credentials.
+- The script was using the agent's credentials (`<user-google-email>.json`) instead of <operator>'s credentials (`<hermes-home>/<user-google-email>.json`).
+- The historical scans were not explicitly configured to use <operator>'s credentials.
 
 ## Fix
-Always use owner's credentials (`<hermes-root>/google-workspace-user.json`) for historical scans. The credentials file must be loaded and used explicitly:
+Always use <operator>'s credentials (`<hermes-home>/<user-google-email>.json`) for historical scans. The credentials file must be loaded and used explicitly:
 
 ```python
-# Load owner's credentials
-with open("<hermes-root>/google-workspace-user.json", "r") as f:
+# Load <operator>'s credentials
+with open("<hermes-home>/<user-google-email>.json", "r") as f:
     owner_credentials = json.load(f)
 
 # Parse the expiry string into a datetime object
@@ -25,12 +25,12 @@ try:
     # Build the Calendar service
     service = build('calendar', 'v3', credentials=Credentials(**owner_credentials))
     
-    # List owner's calendars
+    # List <operator>'s calendars
     calendars = service.calendarList().list().execute()
     
-    # List owner's Gmail inbox
+    # List <operator>'s Gmail inbox
     gmail_service = build('gmail', 'v1', credentials=Credentials(**owner_credentials))
-    owner_email = 'google-workspace-user'
+    owner_email = '<user-google-email>'
     owner_results = gmail_service.users().messages().list(userId=owner_email).execute()
     
 except Exception as e:
@@ -40,5 +40,5 @@ except Exception as e:
 ## Verification
 After applying the fix, verify the following:
 1. The historical scans (`taste.historical.email` and `taste.historical.calendar`) run successfully.
-2. The data is stored in `<hermes-root>/commons/data/ocas-taste/`.
+2. The data is stored in `<hermes-home>/commons/data/ocas-taste/`.
 3. The signals and items are enriched and ready for recommendation generation.

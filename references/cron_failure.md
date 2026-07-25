@@ -16,7 +16,7 @@ When a taste cron job runs and the Gmail/Calendar OAuth token is revoked (all re
 If MCP tools fail with `"MCP server 'google-workspace' is unreachable after 10 consecutive failures"`:
 
 - **Do not retry MCP tools** — the auto-retry cooldown (~60s) wastes the entire cron window
-- **Fall back to standalone scripts immediately.** The `google_auth.py` helper at `<hermes-root>/scripts/google_auth.py` works independently of the MCP server
+- **Fall back to standalone scripts immediately.** The `google_auth.py` helper at `<hermes-home>/scripts/google_auth.py` works independently of the MCP server
 - Check which layer failed: if `get_gmail_service()` / `get_calendar_service()` succeed but MCP tools fail, the tokens are fine — only the MCP server is down
 - If both MCP and standalone fail, the token itself is the problem (see below)
 - **Two separate issues may coexist:** MCP server down + token expired. Report both distinctly.
@@ -25,7 +25,7 @@ If MCP tools fail with `"MCP server 'google-workspace' is unreachable after 10 c
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path('<hermes-root>/scripts')))
+sys.path.insert(0, str(Path('<hermes-home>/scripts')))
 from google_auth import get_gmail_service, get_calendar_service
 
 gmail = get_gmail_service()
@@ -39,7 +39,7 @@ If the credential file at `~/.google_Google services/credentials/<email>.json` i
 
 - `google_auth.py` tries `json.loads(token_path.read_text())` → `JSONDecodeError: Expecting value: line 1 column 1 (char 0)`
 - The helper prints `Skipping <email>: cannot read token file` to stderr and falls back to the next account
-- The fallback account (typically Indigo) has zero consumption emails → all services return 0 messages
+- The fallback account (typically the agent) has zero consumption emails → all services return 0 messages
 - **The scan reports success (exit 0) with 0 extractions — no obvious failure signal**
 
 **Diagnosis:** Before scanning, verify token file integrity:
@@ -50,9 +50,9 @@ Any file that is 0 bytes is corrupt and needs re-authorization.
 
 **Recovery:** Same as `invalid_grant` — re-authorize via:
 ```bash
-python3 <hermes-root>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
+python3 <hermes-home>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
 ```
-⚠️ **Account limitation:** `google_oauth_init.py` hardcodes Indigo's email (`mx.indigo.karasu@gmail.com`) on line 141. It will NOT re-authorize owner's account. For owner's account, either edit line 141 to `'google-workspace-user'` (requires localhost:8000 access), or generate the re-auth URL manually by extracting `client_id`/`client_secret` from `/root/.google_workspace_mcp/credentials/google-workspace-user.json` and constructing the OAuth URL with `login_hint=google-workspace-user` (see SKILL.md gotchas for the PKCE pattern).
+⚠️ **Account limitation:** `google_oauth_init.py` hardcodes the agent's email (`<third-party-or-user-email>`) on line 141. It will NOT re-authorize <operator>'s account. For <operator>'s account, either edit line 141 to `'<user-google-email>'` (requires localhost:8000 access), or generate the re-auth URL manually by extracting `client_id`/`client_secret` from `<gworkspace-creds>/credentials/<user-google-email>.json` and constructing the OAuth URL with `login_hint=<user-google-email>` (see SKILL.md gotchas for the PKCE pattern).
 The scan report should include the file sizes and flag any 0-byte credential files explicitly.
 
 ## Token expiry timezone suffix (distinct from `invalid_grant` and 0-byte)
@@ -68,7 +68,7 @@ This is **not** an `invalid_grant` — the token itself is valid. The Google OAu
 ```bash
 python3 -c "
 import json
-d = json.load(open('/root/.google_workspace_mcp/credentials/<email>.json'))
+d = json.load(open('<gworkspace-creds>/credentials/<email>.json'))
 print('expiry:', repr(d.get('expiry')))
 print('access_token present:', bool(d.get('token')))
 "
@@ -78,8 +78,8 @@ print('access_token present:', bool(d.get('token')))
 ```python
 import json
 from pathlib import Path
-for email in ['google-workspace-user', 'mx.indigo.karasu@gmail.com']:
-    p = Path(f'/root/.google_workspace_mcp/credentials/{email}.json')
+for email in ['<user-google-email>', '<third-party-or-user-email>']:
+    p = Path(f'<gworkspace-creds>/credentials/{email}.json')
     if not p.exists():
         continue
     d = json.loads(p.read_text())

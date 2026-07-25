@@ -11,7 +11,7 @@ Two distinct failure modes require repair before running `taste_scan.py`. Both c
 **Fix:**
 ```python
 import json
-path = '/root/.google_workspace_mcp/credentials/email.json'
+path = '<gworkspace-creds>/credentials/email.json'
 with open(path) as f:
     d = json.load(f)
 if '+' in d.get('expiry', '') or d.get('expiry', '').endswith('Z'):
@@ -29,7 +29,7 @@ with open(path, 'w') as f:
 **Fix:**
 ```python
 import json, time
-path = '/root/.google_workspace_mcp/credentials/email.json'
+path = '<gworkspace-creds>/credentials/email.json'
 with open(path) as f:
     d = json.load(f)
 if isinstance(d.get('expiry'), float):
@@ -47,8 +47,8 @@ python3 -c "
 import json, time
 from pathlib import Path
 
-for email in ['google-workspace-user', 'mx.indigo.karasu@gmail.com']:
-    path = Path(f'/root/.google_workspace_mcp/credentials/{email}.json')
+for email in ['<user-google-email>', '<third-party-or-user-email>']:
+    path = Path(f'<gworkspace-creds>/credentials/{email}.json')
     if not path.exists():
         print(f'{email}: NO TOKEN FILE')
         continue
@@ -109,8 +109,8 @@ When a scan fails due to token format and tokens are repaired mid-session, the r
 python3 -c "
 import json, time
 from pathlib import Path
-for email in ['google-workspace-user', 'mx.indigo.karasu@gmail.com']:
-    path = Path(f'/root/.google_workspace_mcp/credentials/{email}.json')
+for email in ['<user-google-email>', '<third-party-or-user-email>']:
+    path = Path(f'<gworkspace-creds>/credentials/{email}.json')
     with open(path) as f: d = json.load(f)
     expiry = d.get('expiry','')
     if isinstance(expiry, str) and ('+' in expiry or expiry.endswith('Z')):
@@ -118,7 +118,7 @@ for email in ['google-workspace-user', 'mx.indigo.karasu@gmail.com']:
     elif isinstance(expiry, float):
         d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time()+3600))
     with open(path, 'w') as f: json.dump(d, f, indent=2)
-" && cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+" && cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
 ```
 
 **Why this works:** The token file is repaired in the same process invocation that immediately launches the scan. The scan's `google_auth.py` helper reads the token file via `from_authorized_user_file()` before any refresh trigger can rewrite it. The refresh only happens if the token is expired or nearly-expired — a freshly-repaired token with a future expiry won't trigger a refresh on the same init call.

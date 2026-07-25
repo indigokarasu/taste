@@ -22,8 +22,8 @@ Quick verification pattern:
 
 ```python
 import json
-items='<hermes-root>/commons/data/ocas-taste/items.jsonl'
-sigs='<hermes-root>/commons/data/ocas-taste/signals.jsonl'
+items='<hermes-home>/commons/data/ocas-taste/items.jsonl'
+sigs='<hermes-home>/commons/data/ocas-taste/signals.jsonl'
 product_items=sum(1 for l in open(items) if 'rainbow_receipts_product' in l)
 product_signals=sum(1 for l in open(sigs) if 'sig-rainbow-product-' in l)
 print(product_items, product_signals)

@@ -13,21 +13,21 @@ When `taste_scan.py` runs under the `indigo` Hermes profile (e.g., from a cron j
 Run these commands from any directory (paths are absolute):
 
 ```bash
-SCRIPT="<hermes-root>/skills/ocas-taste/scripts/taste_scan.py"
+SCRIPT="<hermes-home>/skills/ocas-taste/scripts/taste_scan.py"
 
 # 1. Fix token paths (relative -> absolute)
-sed -i 's|Path("\[Google OAuth credentials\]google-workspace-user.json")|Path("/root/.google_workspace_mcp/credentials/google-workspace-user.json")|' "$SCRIPT"
-sed -i 's|Path("\[Google OAuth credentials\]mx.indigo.karasu@gmail.com.json")|Path("/root/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json")|' "$SCRIPT"
+sed -i 's|Path("\[Google OAuth credentials\]<user-google-email>.json")|Path("<gworkspace-creds>/credentials/<user-google-email>.json")|' "$SCRIPT"
+sed -i 's|Path("\[Google OAuth credentials\]<third-party-or-user-email>.json")|Path("<gworkspace-creds>/credentials/<third-party-or-user-email>.json")|' "$SCRIPT"
 
 # 2. Fix OAuth scopes (write -> readonly)
 sed -i "s|'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/calendar'|'https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.events.readonly', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly'|" "$SCRIPT"
 
 # 3. Fix data_dir (Path.home() -> hardcoded)
-sed -i 's|self.data_dir = Path(data_dir) if data_dir else Path.home() / ".hermes" / "commons" / "data" / "ocas-taste"|self.data_dir = Path(data_dir) if data_dir else Path("<hermes-root>/commons/data/ocas-taste")|' "$SCRIPT"
+sed -i 's|self.data_dir = Path(data_dir) if data_dir else Path.home() / ".hermes" / "commons" / "data" / "ocas-taste"|self.data_dir = Path(data_dir) if data_dir else Path("<hermes-home>/commons/data/ocas-taste")|' "$SCRIPT"
 
 # 4. Fix other Path.home() references
-sed -i 's|service_account_path = Path.home() / ".hermes" / "credentials" / "hermes-ocigcp.json"|service_account_path = Path("<hermes-root>/credentials/hermes-ocigcp.json")|' "$SCRIPT"
-sed -i 's|env_path = Path.home() / ".hermes" / ".env"|env_path = Path("<hermes-root>/.env")|' "$SCRIPT"
+sed -i 's|service_account_path = Path.home() / ".hermes" / "credentials" / "hermes-ocigcp.json"|service_account_path = Path("<hermes-home>/credentials/hermes-ocigcp.json")|' "$SCRIPT"
+sed -i 's|env_path = Path.home() / ".hermes" / ".env"|env_path = Path("<hermes-home>/.env")|' "$SCRIPT"
 ```
 
 ## Verification
@@ -49,24 +49,24 @@ grep "Path.home()" "$SCRIPT"  # should return nothing
 ## Test Run
 
 ```bash
-cd <hermes-root>/commons/data/ocas-taste && \
-  <hermes-install>/.venv/bin/python3.13 \
-  <hermes-root>/skills/ocas-taste/scripts/taste_scan.py \
+cd <hermes-home>/commons/data/ocas-taste && \
+  <hermes-venv>/bin/python3.13 \
+  <hermes-home>/skills/ocas-taste/scripts/taste_scan.py \
   scan-historical 1
 ```
 
-**NOTE:** Use `<hermes-install>/.venv/bin/python3.13` (not the ocas-taste venv's Python 3.14) because `googleapiclient` is not available for Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
+**NOTE:** Use `<hermes-venv>/bin/python3.13` (not the ocas-taste venv's Python 3.14) because `googleapiclient` is not available for Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
 
 ## Notes
 
 - These fixes are idempotent — safe to run multiple times
 - The `cross-profile` write guard blocks `patch`/`write_file` on files in `~/.hermes/skills/` from the indigo profile. Use `terminal()` with `sed` to bypass.
 - If the skill is updated from GitHub (`taste.update`), these patches may be overwritten and need to be re-applied.
-- **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-install>/.venv/bin/python3.13`), never with the ocas-taste venv's Python 3.14.or Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
+- **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-venv>/bin/python3.13`), never with the ocas-taste venv's Python 3.14.or Python 3.14. See gotcha "Python 3.14 venv lacks googleapiclient".
 
   ## Notes
 
   - These fixes are idempotent — safe to run multiple times
   - The `cross-profile` write guard blocks `patch`/`write_file` on files in `~/.hermes/skills/` from the indigo profile. Use `terminal()` with `sed` to bypass.
   - If the skill is updated from GitHub (`taste.update`), these patches may be overwritten and need to be re-applied.
-  - **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-install>/.venv/bin/python3.13`), never with the ocas-taste venv's Python 3.14.
+  - **Python version:** Always run `taste_scan.py` with Python 3.13 (`<hermes-venv>/bin/python3.13`), never with the ocas-taste venv's Python 3.14.

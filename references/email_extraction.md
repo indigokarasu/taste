@@ -148,16 +148,16 @@ Each scan processes messages/events newer than `last_scan_timestamp`, then updat
 
 ### Google OAuth
 
-All Google API access uses the central `google_auth.py` helper at `<hermes-root>/scripts/google_auth.py`. Scripts should import from it:
+All Google API access uses the central `google_auth.py` helper at `<hermes-home>/scripts/google_auth.py`. Scripts should import from it:
 
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path('<hermes-root>/scripts')))
+sys.path.insert(0, str(Path('<hermes-home>/scripts')))
 from google_auth import get_gmail_service, get_calendar_service
 ```
 
-The helper handles token refresh automatically. Credentials are stored at `Google OAuth credentials`. If tokens are revoked, re-authorize with `python3 <hermes-root>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py`.
+The helper handles token refresh automatically. Credentials are stored at `Google OAuth credentials`. If tokens are revoked, re-authorize with `python3 <hermes-home>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py`.
 
 Token scopes needed: `gmail.modify` and `calendar`.
 

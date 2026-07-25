@@ -5,7 +5,7 @@
 ## Command Pattern
 
 ```bash
-cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
 ```
 
 Output: JSON with `signals_created`, `cancellations`, `services_scanned`, plus detailed `extractions` array.
@@ -24,9 +24,9 @@ Output: JSON with `signals_created`, `cancellations`, `services_scanned`, plus d
 When the dispatcher fires a `taste_new_data` item:
 1. **Pre-scan token repair** (REQUIRED) — run the combined repair script before every scan (see SKILL.md "Pre-scan token repair checklist"). Two failure modes: timezone suffix (`+00:00`/`Z`) and float expiry. Both hit simultaneously on 2026-06-25. Timezone suffix reappears on every refresh — always repair before scanning.
 2. **Chain repair + scan in a SINGLE `terminal()` call** — see OAuth Race Condition pitfall below. Do NOT run repair as one call and scan as a separate call.
-3. `cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24`
+3. `cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24`
 4. Verify output `signals_created` count
-5. Write Taste journal: `<hermes-home>/commons/journals/ocas-taste/YYYY-MM-DD/taste-scan-{ts}.json`
+5. Write Taste journal: `<hermes-home>/profiles/indigo/commons/journals/ocas-taste/YYYY-MM-DD/taste-scan-{ts}.json`
    - Journal structure: `{"run_id": "taste-scan-{ts}", "run_type": "dispatch_scan", "timestamp": "...", "profile": "indigo", "summary": "...", "metrics": {"signals_created": N, "cancellations": N, "services_scanned": [...], "extractions_processed": N}, "signals": [{"service": "...", "venue": "...", "total": "...", "type": "..."}]}`
 6. **Taste runs independently** — Even if email and journal pipelines are second-wave re-detections or no-ops, still run the Taste scan. Signals are independent.
 7. If 0 signals created and dispatch reported changes, log potential false positive in evidence
@@ -40,21 +40,21 @@ When the dispatcher fires a `taste_new_data` item:
 **Concrete example (2026-06-25 dispatch #111):**
 ```
 # Call 1: Repair succeeded
-python3 -c "..." && echo "Repaired"  # → Repaired: google-workspace-user
+python3 -c "..." && echo "Repaired"  # → Repaired: <user-google-email>
 
 # Call 2: Scan failed
 cd ... && /usr/bin/python3 taste_scan.py scan-incremental 24
-# → Error with google-workspace-user.json: unconverted data remains: +00:00
-# → Initialized Gmail and Calendar with mx.indigo.karasu@gmail.com.json  (wrong account!)
-# → 0 signals (Indigo's account has no consumption emails)
+# → Error with <user-google-email>.json: unconverted data remains: +00:00
+# → Initialized Gmail and Calendar with <third-party-or-user-email>.json  (wrong account!)
+# → 0 signals (the agent's account has no consumption emails)
 ```
 
 **Fix:** Chain repair and scan in a SINGLE `terminal()` call with `&&`:
 ```bash
-python3 -c "<repair script>" && cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+python3 -c "<repair script>" && cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
 ```
 
-**Why this matters:** When the scan silently falls back to Indigo's account (which has zero consumption emails), it reports 0 signals with no obvious error. You might think there's genuinely nothing new and skip the scan. The only way to detect the failure is to check which account the scan output says it initialized with — always verify `"Initialized Gmail and Calendar with google-workspace-user.json"` in the output.
+**Why this matters:** When the scan silently falls back to the agent's account (which has zero consumption emails), it reports 0 signals with no obvious error. You might think there's genuinely nothing new and skip the scan. The only way to detect the failure is to check which account the scan output says it initialized with — always verify `"Initialized Gmail and Calendar with <user-google-email>.json"` in the output.
 
 ## Post-Scan Dedup (REQUIRED After Every Dispatch Scan)
 
@@ -64,14 +64,14 @@ python3 -c "<repair script>" && cd <hermes-home>/commons/data/ocas-taste && /usr
 
 **Dedup script (run after every dispatch-triggered scan):**
 ```bash
-cd <hermes-home>/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/skills/ocas-taste/scripts/dispatch_taste_dedup.py
+cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py
 ```
 
 **Path clarification (confirmed 2026-06-26):** The script lives under `skills/ocas-taste/scripts/`, NOT under `commons/data/ocas-taste/scripts/`. A relative `scripts/dispatch_taste_dedup.py` from the data directory will fail with `FileNotFoundError`. Always use the absolute path.
 
 Or inline (if the script isn't available):
 ```bash
-cd <hermes-home>/commons/data/ocas-taste && python3 -c "
+cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && python3 -c "
 import json
 signals = []
 with open('signals.jsonl') as f:
@@ -101,9 +101,9 @@ with open('signals.jsonl', 'w') as f:
 
 ## Key Details
 
-- **Python runtime:** Must use `/usr/bin/python3` (system Python 3.14 with googleapiclient installed). NOT `<hermes-install>/.venv/bin/python3.13` (path does not exist).
-- **Script location:** `<hermes-home>/skills/ocas-taste/scripts/taste_scan.py`
-- **Data directory:** `<hermes-home>/commons/data/ocas-taste`
+- **Python runtime:** Must use `/usr/bin/python3` (system Python 3.14 with googleapiclient installed). NOT `<hermes-venv>/bin/python3.13` (path does not exist).
+- **Script location:** `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py`
+- **Data directory:** `<hermes-home>/profiles/indigo/commons/data/ocas-taste`
 - Script handles its own auth and dedup (internal dedup only catches exact-match duplicates, not dispatch-wave re-scans)
 - Output goes to stdout as JSON; new signals written to `signals.jsonl` automatically
 - **Manual dedup required after every dispatch wave** — the built-in dedup is insufficient for multi-wave scenarios

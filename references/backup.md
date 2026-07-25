@@ -6,14 +6,14 @@ All taste and styx data is backed up to GitHub LFS (`/root/indigo-repo`):
 
 | File | Source | Description |
 |------|--------|-------------|
-| `data/styx.db` | `<hermes-root>/data/styx.db` | Merchant database (162 food + 19 travel) |
-| `data/transactions.db` | `<hermes-root>/data/transactions.db` | Plaid transaction history |
-| `data/ocas-taste-signals.jsonl` | `<hermes-root>/commons/data/ocas-taste/signals.jsonl` | ~7,800 consumption signals |
-| `data/ocas-taste-items.jsonl` | `<hermes-root>/commons/data/ocas-taste/items.jsonl` | ~980 enriched entities |
-| `data/ocas-taste-extractions.jsonl` | `<hermes-root>/commons/data/ocas-taste/extractions.jsonl` | Raw email/calendar extractions |
-| `data/ocas-taste-links.jsonl` | `<hermes-root>/commons/data/ocas-taste/links.jsonl` | Entity relationships |
-| `data/ocas-taste-decisions.jsonl` | `<hermes-root>/commons/data/ocas-taste/decisions.jsonl` | Audit log |
-| `data/ocas-taste-config.json` | `<hermes-root>/commons/data/ocas-taste/config.json` | Configuration |
+| `data/styx.db` | `<hermes-home>/data/styx.db` | Merchant database (162 food + 19 travel) |
+| `data/transactions.db` | `<hermes-home>/data/transactions.db` | Plaid transaction history |
+| `data/ocas-taste-signals.jsonl` | `<hermes-home>/commons/data/ocas-taste/signals.jsonl` | ~7,800 consumption signals |
+| `data/ocas-taste-items.jsonl` | `<hermes-home>/commons/data/ocas-taste/items.jsonl` | ~980 enriched entities |
+| `data/ocas-taste-extractions.jsonl` | `<hermes-home>/commons/data/ocas-taste/extractions.jsonl` | Raw email/calendar extractions |
+| `data/ocas-taste-links.jsonl` | `<hermes-home>/commons/data/ocas-taste/links.jsonl` | Entity relationships |
+| `data/ocas-taste-decisions.jsonl` | `<hermes-home>/commons/data/ocas-taste/decisions.jsonl` | Audit log |
+| `data/ocas-taste-config.json` | `<hermes-home>/commons/data/ocas-taste/config.json` | Configuration |
 
 ## What's NOT backed up
 
@@ -34,9 +34,9 @@ Git LFS tracks: *.jsonl, *.db, *.lbug, *.sqlite3, *.tar.gz
 
 cd /root/indigo-repo
 git lfs pull
-cp data/styx.db <hermes-root>/data/styx.db
-cp data/ocas-taste-*.jsonl <hermes-root>/commons/data/ocas-taste/
-cp data/transactions.db <hermes-root>/data/transactions.db
+cp data/styx.db <hermes-home>/data/styx.db
+cp data/ocas-taste-*.jsonl <hermes-home>/commons/data/ocas-taste/
+cp data/transactions.db <hermes-home>/data/transactions.db
 
 ## Disk space management
 
