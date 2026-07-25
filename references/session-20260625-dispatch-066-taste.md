@@ -14,11 +14,11 @@
 
 ### Token repair race condition (confirmed again)
 
-Both google-workspace-user and mx.indigo.karasu@gmail.com had Mode 1 failure (timezone suffix `+00:00`). The repair MUST be chained with the scan in a single `terminal()` call — separate calls fail because OAuth refresh re-adds the suffix.
+Both <user-google-email> and <third-party-or-user-email> had Mode 1 failure (timezone suffix `+00:00`). The repair MUST be chained with the scan in a single `terminal()` call — separate calls fail because OAuth refresh re-adds the suffix.
 
 ### DoorDash orders from same address
 
-Both orders delivered to 475 Hampshire St, San Francisco, CA 94110 — owner's address. This is consistent with the consumption pattern.
+Both orders delivered to 475 Hampshire St, San Francisco, CA 94110 — <operator>'s address. This is consistent with the consumption pattern.
 
 ## Verification
 

@@ -8,18 +8,18 @@
 - Totals: 4,747 signals | 1,318 items
 
 ## Styx Universal Enrichment
-- Script: `python3 <hermes-home>/skills/ocas-styx/scripts/styx_universal_enrich.py --limit 0`
+- Script: `python3 <hermes-home>/profiles/indigo/skills/ocas-styx/scripts/styx_universal_enrich.py --limit 0`
 - 31 merchants enriched (new: Taco Los Altos, Philz Coffee, lululemon SF, Extreme Pizza, Serrano's Pizza, Etsy shops, Heritage Thai Spa, Berkeley Bowl, etc.)
 - 8 failed (non-placeable): Kalshi, Lugg Hold, Querytracker, Citi Autopay, Harbor View HOA, Livykate Clothing, Alves Cleaning, SP LIVYKATE
 - Remaining unenriched non-financial: 69 (all expected non-placeable)
 
-## Email Triage (owner's account)
+## Email Triage (<operator>'s account)
 - All 4 threads confirmed no-action (informational/transactional/resolved)
-- GLG thread: owner already replied declining, Mason acknowledged
+- GLG thread: <operator> already replied declining, Mason acknowledged
 - Office Hours: recurring solicitation, no response needed
 - Dialectica survey: paid survey follow-up, no action (confirmed pattern)
 
-## Email Triage (Indigo's account)
+## Email Triage (the agent's account)
 - PR #12: approved by akramcodez (LGTM)
 - PR #13: new blocker — double HTML escaping regression in processParagraph()
 - Newspapers.com: marketing, no action

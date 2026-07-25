@@ -23,12 +23,12 @@ calendar if the primary is missing.
 
 ### Token file locations
 
-This system uses a single centralized Google auth helper at `<hermes-root>/scripts/google_auth.py`. All standalone Python scripts import from it:
+This system uses a single centralized Google auth helper at `<hermes-home>/scripts/google_auth.py`. All standalone Python scripts import from it:
 
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path('<hermes-root>/scripts')))
+sys.path.insert(0, str(Path('<hermes-home>/scripts')))
 from google_auth import get_service, get_gmail_service, get_drive_service, get_calendar_service, get_people_service
 ```
 
@@ -36,8 +36,8 @@ The helper handles token refresh automatically. Credentials are stored at `Googl
 
 ### Two Google accounts
 
-- **owner's account** (`google-workspace-user`): Used for user data (email, calendar, contacts, Drive). OAuth client in owner's own Google Cloud project.
-- **Indigo's account** (`mx.indigo.karasu@gmail.com`): Used for agent operations (sending email as Indigo, agent's own calendar). OAuth client in Indigo's own Google Cloud project.
+- **<operator>'s account** (`<user-google-email>`): Used for user data (email, calendar, contacts, Drive). OAuth client in <operator>'s own Google Cloud project.
+- **the agent's account** (`<third-party-or-user-email>`): Used for agent operations (sending email as the agent, agent's own calendar). OAuth client in the agent's own Google Cloud project.
 
 Each account has its own OAuth client in its own Google Cloud project. Never mix them.
 
@@ -46,7 +46,7 @@ Each account has its own OAuth client in its own Google Cloud project. Never mix
 If refresh fails with `invalid_grant`, the token is definitively dead. Re-authorize with:
 
 ```bash
-python3 <hermes-root>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
+python3 <hermes-home>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
 ```
 
 ### Known pitfall: Calendar API scope not in token

@@ -20,7 +20,7 @@ Quick reference for what each script in `scripts/` does and when to use it.
 2. Scans email extractions for restaurants not in taste
 3. Cross-source dedup
 4. Enriches all unenriched items via Google Places
-5. Works without OAuth -- uses `GOOGLE_PLACES_API_KEY` from `<hermes-root>/secrets/plaid.env`
+5. Works without OAuth -- uses `GOOGLE_PLACES_API_KEY` from `<hermes-home>/secrets/plaid.env`
 
 **`clean_signals.py <path>`** deduplicates signals JSONL:
 - Removes generic meal titles (Breakfast, Lunch, Dinner, Brunch)
@@ -30,7 +30,7 @@ Quick reference for what each script in `scripts/` does and when to use it.
 
 ## Non-Food Merchant Enrichment
 
-**`styx_places_enrich.py`** (in `<hermes-home>/skills/ocas-styx/scripts/`) handles food merchants only. For non-food categories (retail, service, transport, entertainment, home, etc.), use an ad-hoc approach:
+**`styx_places_enrich.py`** (in `<hermes-home>/profiles/indigo/skills/ocas-styx/scripts/`) handles food merchants only. For non-food categories (retail, service, transport, entertainment, home, etc.), use an ad-hoc approach:
 1. Query styx.db for merchants WHERE `(address IS NULL OR address = '')` AND category NOT IN financial categories
 2. Call Google Places text search API for each
 3. Update merchants table with address, city, state
@@ -52,11 +52,11 @@ What fails:
 
 ## Invocation
 
-**IMPORTANT:** Do NOT use the ocas-taste venv Python (`<hermes-root>/commons/data/ocas-taste/venv/bin/python3`) — it's Python 3.14 and lacks `googleapiclient`. Use the hermes-agent venv instead:
+**IMPORTANT:** Do NOT use the ocas-taste venv Python (`<hermes-home>/commons/data/ocas-taste/venv/bin/python3`) — it's Python 3.14 and lacks `googleapiclient`. Use the hermes-agent venv instead:
 
 ```bash
-<hermes-install>/.venv/bin/python3.13 <hermes-home>/skills/ocas-taste/scripts/<script>.py [args]
+<hermes-venv>/bin/python3.13 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/<script>.py [args]
 ```
 
-**Correct script path:** `<hermes-home>/skills/ocas-taste/scripts/`
-**WRONG path:** `<hermes-root>/skills/ocas-taste/scripts/` (does not exist)
+**Correct script path:** `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/`
+**WRONG path:** `<hermes-home>/skills/ocas-taste/scripts/` (does not exist)

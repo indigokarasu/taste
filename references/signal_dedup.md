@@ -22,7 +22,7 @@ Source priority (keep highest):
 ## Script
 
 ```bash
-python3 <hermes-root>/commons/data/ocas-taste/scripts/taste_signals_dedup.py
+python3 <hermes-home>/commons/data/ocas-taste/scripts/taste_signals_dedup.py
 ```
 
 The script:
