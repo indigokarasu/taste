@@ -20,7 +20,11 @@ Quick reference for what each script in `scripts/` does and when to use it.
 2. Scans email extractions for restaurants not in taste
 3. Cross-source dedup
 4. Enriches all unenriched items via Google Places
+<<<<<<< Updated upstream
 5. Works without OAuth -- uses `GOOGLE_PLACES_API_KEY` from `<hermes-home>/secrets/plaid.env`
+=======
+5. Works without OAuth -- uses `GOOGLE_PLACES_API_KEY` from `~/.hermes/secrets/plaid.env`
+>>>>>>> Stashed changes
 
 **`clean_signals.py <path>`** deduplicates signals JSONL:
 - Removes generic meal titles (Breakfast, Lunch, Dinner, Brunch)
@@ -30,7 +34,11 @@ Quick reference for what each script in `scripts/` does and when to use it.
 
 ## Non-Food Merchant Enrichment
 
+<<<<<<< Updated upstream
 **`styx_places_enrich.py`** (in `<hermes-home>/profiles/indigo/skills/ocas-styx/scripts/`) handles food merchants only. For non-food categories (retail, service, transport, entertainment, home, etc.), use an ad-hoc approach:
+=======
+**`styx_places_enrich.py`** (in `~/.hermes/profiles/indigo/skills/ocas-styx/scripts/`) handles food merchants only. For non-food categories (retail, service, transport, entertainment, home, etc.), use an ad-hoc approach:
+>>>>>>> Stashed changes
 1. Query styx.db for merchants WHERE `(address IS NULL OR address = '')` AND category NOT IN financial categories
 2. Call Google Places text search API for each
 3. Update merchants table with address, city, state
@@ -52,6 +60,7 @@ What fails:
 
 ## Invocation
 
+<<<<<<< Updated upstream
 **IMPORTANT:** Do NOT use the ocas-taste venv Python (`<hermes-home>/commons/data/ocas-taste/venv/bin/python3`) — it's Python 3.14 and lacks `googleapiclient`. Use the hermes-agent venv instead:
 
 ```bash
@@ -60,3 +69,13 @@ What fails:
 
 **Correct script path:** `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/`
 **WRONG path:** `<hermes-home>/skills/ocas-taste/scripts/` (does not exist)
+=======
+**IMPORTANT:** Do NOT use the ocas-taste venv Python (`~/.hermes/commons/data/ocas-taste/venv/bin/python3`) — it's Python 3.14 and lacks `googleapiclient`. Use the hermes-agent venv instead:
+
+```bash
+<hermes-venv>/bin/python3.13 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/<script>.py [args]
+```
+
+**Correct script path:** `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/`
+**WRONG path:** `~/.hermes/skills/ocas-taste/scripts/` (does not exist)
+>>>>>>> Stashed changes

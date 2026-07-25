@@ -15,7 +15,11 @@ string ` is confirmed` (and possibly other trailing subject text) appended to th
 
 ## Symptom check
 ```bash
+<<<<<<< Updated upstream
 cd <hermes-home>/commons/data/ocas-taste
+=======
+cd ~/.hermes/commons/data/ocas-taste
+>>>>>>> Stashed changes
 python3 - <<'PYEOF'
 import json
 bad=[l for l in open('signals.jsonl') if 'is confirmed' in (json.loads(l).get('venue_name') or '')]
@@ -28,7 +32,11 @@ Strip the trailing ` is confirmed.*$` from `venue_name` (and `merchant_name` if 
 then re-run dispatch dedup — the name normalization exposes real duplicates.
 
 ```bash
+<<<<<<< Updated upstream
 cd <hermes-home>/commons/data/ocas-taste
+=======
+cd ~/.hermes/commons/data/ocas-taste
+>>>>>>> Stashed changes
 python3 - <<'PYEOF'
 import json, re
 fixed=0; out=[]
@@ -48,7 +56,11 @@ print(f'fixed {fixed} signals')
 PYEOF
 
 # Re-dedup — name change exposes real duplicates
+<<<<<<< Updated upstream
 <hermes-venv>/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py
+=======
+<hermes-venv>/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py
+>>>>>>> Stashed changes
 ```
 
 In the 2026-07-14 run this fixed 567 + 17 (this-run) signals and the re-dedup removed 64

@@ -47,7 +47,11 @@ python3 -c "
 import json, time
 from pathlib import Path
 
+<<<<<<< Updated upstream
 for email in ['<user-google-email>', '<third-party-or-user-email>']:
+=======
+for email in ['<user-google-email>', '<agent-email>']:
+>>>>>>> Stashed changes
     path = Path(f'<gworkspace-creds>/credentials/{email}.json')
     if not path.exists():
         print(f'{email}: NO TOKEN FILE')
@@ -109,7 +113,11 @@ When a scan fails due to token format and tokens are repaired mid-session, the r
 python3 -c "
 import json, time
 from pathlib import Path
+<<<<<<< Updated upstream
 for email in ['<user-google-email>', '<third-party-or-user-email>']:
+=======
+for email in ['<user-google-email>', '<agent-email>']:
+>>>>>>> Stashed changes
     path = Path(f'<gworkspace-creds>/credentials/{email}.json')
     with open(path) as f: d = json.load(f)
     expiry = d.get('expiry','')
@@ -118,7 +126,11 @@ for email in ['<user-google-email>', '<third-party-or-user-email>']:
     elif isinstance(expiry, float):
         d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time()+3600))
     with open(path, 'w') as f: json.dump(d, f, indent=2)
+<<<<<<< Updated upstream
 " && cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+=======
+" && cd ~/.hermes/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+>>>>>>> Stashed changes
 ```
 
 **Why this works:** The token file is repaired in the same process invocation that immediately launches the scan. The scan's `google_auth.py` helper reads the token file via `from_authorized_user_file()` before any refresh trigger can rewrite it. The refresh only happens if the token is expired or nearly-expired — a freshly-repaired token with a future expiry won't trigger a refresh on the same init call.

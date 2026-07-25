@@ -6,6 +6,7 @@ All taste and styx data is backed up to GitHub LFS (`<fs-root>/indigo-repo`):
 
 | File | Source | Description |
 |------|--------|-------------|
+<<<<<<< Updated upstream
 | `data/styx.db` | `<hermes-home>/data/styx.db` | Merchant database (162 food + 19 travel) |
 | `data/transactions.db` | `<hermes-home>/data/transactions.db` | Plaid transaction history |
 | `data/ocas-taste-signals.jsonl` | `<hermes-home>/commons/data/ocas-taste/signals.jsonl` | ~7,800 consumption signals |
@@ -14,15 +15,33 @@ All taste and styx data is backed up to GitHub LFS (`<fs-root>/indigo-repo`):
 | `data/ocas-taste-links.jsonl` | `<hermes-home>/commons/data/ocas-taste/links.jsonl` | Entity relationships |
 | `data/ocas-taste-decisions.jsonl` | `<hermes-home>/commons/data/ocas-taste/decisions.jsonl` | Audit log |
 | `data/ocas-taste-config.json` | `<hermes-home>/commons/data/ocas-taste/config.json` | Configuration |
+=======
+| `data/styx.db` | `~/.hermes/data/styx.db` | Merchant database (162 food + 19 travel) |
+| `data/transactions.db` | `~/.hermes/data/transactions.db` | Plaid transaction history |
+| `data/ocas-taste-signals.jsonl` | `~/.hermes/commons/data/ocas-taste/signals.jsonl` | ~7,800 consumption signals |
+| `data/ocas-taste-items.jsonl` | `~/.hermes/commons/data/ocas-taste/items.jsonl` | ~980 enriched entities |
+| `data/ocas-taste-extractions.jsonl` | `~/.hermes/commons/data/ocas-taste/extractions.jsonl` | Raw email/calendar extractions |
+| `data/ocas-taste-links.jsonl` | `~/.hermes/commons/data/ocas-taste/links.jsonl` | Entity relationships |
+| `data/ocas-taste-decisions.jsonl` | `~/.hermes/commons/data/ocas-taste/decisions.jsonl` | Audit log |
+| `data/ocas-taste-config.json` | `~/.hermes/commons/data/ocas-taste/config.json` | Configuration |
+>>>>>>> Stashed changes
 
 ## What's NOT backed up
 
 - `state.db` (14G) — too large for GitHub LFS
+<<<<<<< Updated upstream
 - `<commons>/data/ocas-taste/` — stale copy, removed
 
 ## Backup script
 
 bash <repo-root>/scripts/backup_all_hermes_data.sh
+=======
+- `<fs-root>/commons/data/ocas-taste/` — stale copy, removed
+
+## Backup script
+
+bash <fs-root>/indigo-repo/scripts/backup_all_hermes_data.sh
+>>>>>>> Stashed changes
 
 Runs daily at 03:00 via Backup Hermes Sessions to GitHub cron job.
 
@@ -34,9 +53,15 @@ Git LFS tracks: *.jsonl, *.db, *.lbug, *.sqlite3, *.tar.gz
 
 cd <fs-root>/indigo-repo
 git lfs pull
+<<<<<<< Updated upstream
 cp data/styx.db <hermes-home>/data/styx.db
 cp data/ocas-taste-*.jsonl <hermes-home>/commons/data/ocas-taste/
 cp data/transactions.db <hermes-home>/data/transactions.db
+=======
+cp data/styx.db ~/.hermes/data/styx.db
+cp data/ocas-taste-*.jsonl ~/.hermes/commons/data/ocas-taste/
+cp data/transactions.db ~/.hermes/data/transactions.db
+>>>>>>> Stashed changes
 
 ## Disk space management
 

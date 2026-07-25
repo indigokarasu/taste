@@ -14,7 +14,11 @@
 
 ### Token repair race condition (confirmed again)
 
+<<<<<<< Updated upstream
 Both <user-google-email> and <third-party-or-user-email> had Mode 1 failure (timezone suffix `+00:00`). The repair MUST be chained with the scan in a single `terminal()` call — separate calls fail because OAuth refresh re-adds the suffix.
+=======
+Both <user-google-email> and <agent-email> had Mode 1 failure (timezone suffix `+00:00`). The repair MUST be chained with the scan in a single `terminal()` call — separate calls fail because OAuth refresh re-adds the suffix.
+>>>>>>> Stashed changes
 
 ### DoorDash orders from same address
 

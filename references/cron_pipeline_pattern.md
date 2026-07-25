@@ -15,7 +15,11 @@ Confirmed working pattern for the daily `taste:scan` cron job. Runs with no user
 
 ## Key Details
 
+<<<<<<< Updated upstream
 - **Google Places API key**: read from `<hermes-home>/secrets/plaid.env` (NOT an env var)
+=======
+- **Google Places API key**: read from `~/.hermes/secrets/plaid.env` (NOT an env var)
+>>>>>>> Stashed changes
 - **Enrichment**: inline Python preferred over `taste_full_enrich.py` (schema drift in script)
 - **Dedup key format**: `{source}:{normalized_venue}:{date[:10]}` (e.g., `styx:ikesloves:2026-04-11`)
 - **Item schema**: use `domain: 'food'`, `signal_type: 'purchase'`, UUID-style item_id
@@ -25,10 +29,17 @@ Confirmed working pattern for the daily `taste:scan` cron job. Runs with no user
 
 ## Script Locations
 
+<<<<<<< Updated upstream
 - Active scripts: `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/`
 - Data dir: `<hermes-home>/commons/data/ocas-taste/`
 - Styx DB: `<hermes-home>/data/styx.db`
 - Transactions DB: `<hermes-home>/data/transactions.db`
+=======
+- Active scripts: `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/`
+- Data dir: `~/.hermes/commons/data/ocas-taste/`
+- Styx DB: `~/.hermes/data/styx.db`
+- Transactions DB: `~/.hermes/data/transactions.db`
+>>>>>>> Stashed changes
 - Python: `<hermes-venv>/bin/python3.13` (NOT ocas-taste venv's 3.14)
 
 ## What `taste_full_enrich.py` Actually Does (2026-06-17)

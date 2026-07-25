@@ -5,6 +5,7 @@
 ## Email Triage (Genuine)
 
 ### <user-google-email> (5 threads)
+<<<<<<< Updated upstream
 - the agent dream journal → no action (personal)
 - Product Visualization Software reply → no action (<operator> already replied declining)
 - **AlphaSights Project Proposal (Raphael Gold) → FLAGGED** — requires <operator>'s personal decision on Healthcare Software/AI expert call
@@ -12,6 +13,15 @@
 - Abbott shipment notification → no action (tracking update, FedEx 873586157719)
 
 ### <third-party-or-user-email> (1 thread)
+=======
+- the agent dream journal → no action (personal)
+- Product Visualization Software reply → no action (<operator> already replied declining)
+- **AlphaSights Project Proposal (Raphael Gold) → FLAGGED** — requires <operator>'s personal decision on Healthcare Software/AI expert call
+- Kickstargogo solar cap → no action (spam)
+- Abbott shipment notification → no action (tracking update, FedEx 873586157719)
+
+### <agent-email> (1 thread)
+>>>>>>> Stashed changes
 - Morning Briefing → no action (self-sent)
 
 **Result:** 1 escalation (AlphaSights), 5 no-action.
@@ -29,7 +39,11 @@ No pipeline execution needed.
 - Token repair: both accounts had timezone suffix (`+00:00`) — fixed in single chained call
 - 2 new signals: Hard Knox Cafe ($26.77) + Next Level VG ($76.66) via DoorDash
 - Post-scan dedup: 8 duplicates removed (4713 → 4705)
+<<<<<<< Updated upstream
 - **Path fix:** `dispatch_taste_dedup.py` does NOT exist under `commons/data/ocas-taste/scripts/` — must use absolute path `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py`
+=======
+- **Path fix:** `dispatch_taste_dedup.py` does NOT exist under `commons/data/ocas-taste/scripts/` — must use absolute path `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py`
+>>>>>>> Stashed changes
 
 ## Key Pattern
 

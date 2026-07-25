@@ -16,7 +16,11 @@ When a taste cron job runs and the Gmail/Calendar OAuth token is revoked (all re
 If MCP tools fail with `"MCP server 'google-workspace' is unreachable after 10 consecutive failures"`:
 
 - **Do not retry MCP tools** — the auto-retry cooldown (~60s) wastes the entire cron window
+<<<<<<< Updated upstream
 - **Fall back to standalone scripts immediately.** The `google_auth.py` helper at `<hermes-home>/scripts/google_auth.py` works independently of the MCP server
+=======
+- **Fall back to standalone scripts immediately.** The `google_auth.py` helper at `~/.hermes/scripts/google_auth.py` works independently of the MCP server
+>>>>>>> Stashed changes
 - Check which layer failed: if `get_gmail_service()` / `get_calendar_service()` succeed but MCP tools fail, the tokens are fine — only the MCP server is down
 - If both MCP and standalone fail, the token itself is the problem (see below)
 - **Two separate issues may coexist:** MCP server down + token expired. Report both distinctly.
@@ -25,7 +29,11 @@ If MCP tools fail with `"MCP server 'google-workspace' is unreachable after 10 c
 ```python
 import sys
 from pathlib import Path
+<<<<<<< Updated upstream
 sys.path.insert(0, str(Path('<hermes-home>/scripts')))
+=======
+sys.path.insert(0, str(Path('~/.hermes/scripts')))
+>>>>>>> Stashed changes
 from google_auth import get_gmail_service, get_calendar_service
 
 gmail = get_gmail_service()
@@ -50,9 +58,15 @@ Any file that is 0 bytes is corrupt and needs re-authorization.
 
 **Recovery:** Same as `invalid_grant` — re-authorize via:
 ```bash
+<<<<<<< Updated upstream
 python3 <hermes-home>/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
 ```
 ⚠️ **Account limitation:** `google_oauth_init.py` hardcodes the agent's email (`<third-party-or-user-email>`) on line 141. It will NOT re-authorize <operator>'s account. For <operator>'s account, either edit line 141 to `'<user-google-email>'` (requires localhost:8000 access), or generate the re-auth URL manually by extracting `client_id`/`client_secret` from `<gworkspace-creds>/credentials/<user-google-email>.json` and constructing the OAuth URL with `login_hint=<user-google-email>` (see SKILL.md gotchas for the PKCE pattern).
+=======
+python3 ~/.hermes/skills/infrastructure/google-workspace-auth/scripts/google_oauth_init.py
+```
+⚠️ **Account limitation:** `google_oauth_init.py` hardcodes the agent's email (`<agent-email>`) on line 141. It will NOT re-authorize <operator>'s account. For <operator>'s account, either edit line 141 to `'<user-google-email>'` (requires localhost:8000 access), or generate the re-auth URL manually by extracting `client_id`/`client_secret` from `<gworkspace-creds>/credentials/<user-google-email>.json` and constructing the OAuth URL with `login_hint=<user-google-email>` (see SKILL.md gotchas for the PKCE pattern).
+>>>>>>> Stashed changes
 The scan report should include the file sizes and flag any 0-byte credential files explicitly.
 
 ## Token expiry timezone suffix (distinct from `invalid_grant` and 0-byte)
@@ -78,7 +92,11 @@ print('access_token present:', bool(d.get('token')))
 ```python
 import json
 from pathlib import Path
+<<<<<<< Updated upstream
 for email in ['<user-google-email>', '<third-party-or-user-email>']:
+=======
+for email in ['<user-google-email>', '<agent-email>']:
+>>>>>>> Stashed changes
     p = Path(f'<gworkspace-creds>/credentials/{email}.json')
     if not p.exists():
         continue

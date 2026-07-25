@@ -22,8 +22,13 @@ Quick verification pattern:
 
 ```python
 import json
+<<<<<<< Updated upstream
 items='<hermes-home>/commons/data/ocas-taste/items.jsonl'
 sigs='<hermes-home>/commons/data/ocas-taste/signals.jsonl'
+=======
+items='~/.hermes/commons/data/ocas-taste/items.jsonl'
+sigs='~/.hermes/commons/data/ocas-taste/signals.jsonl'
+>>>>>>> Stashed changes
 product_items=sum(1 for l in open(items) if 'rainbow_receipts_product' in l)
 product_signals=sum(1 for l in open(sigs) if 'sig-rainbow-product-' in l)
 print(product_items, product_signals)

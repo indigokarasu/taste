@@ -21,7 +21,11 @@
 
 ### Security
 - Spotify `CLIENT_ID` / `CLIENT_SECRET` now read from `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` env vars; hardcoded values purged from `scripts/spotify_auth_helper.py` and from git history. Old credential must be rotated in the Spotify Developer Dashboard.
+<<<<<<< Updated upstream
 - Replaced hardcoded `<hermes-home>` with env-resolved `AGENT_ROOT` (`HERMES_HOME` || `OCAS_AGENT_ROOT` || `~/.hermes`).
+=======
+- Replaced hardcoded `~/.hermes` with env-resolved `AGENT_ROOT` (`HERMES_HOME` || `OCAS_AGENT_ROOT` || `~/.hermes`).
+>>>>>>> Stashed changes
 
 ## [3.5.0] - 2026-04-18
 

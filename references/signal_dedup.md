@@ -22,7 +22,11 @@ Source priority (keep highest):
 ## Script
 
 ```bash
+<<<<<<< Updated upstream
 python3 <hermes-home>/commons/data/ocas-taste/scripts/taste_signals_dedup.py
+=======
+python3 ~/.hermes/commons/data/ocas-taste/scripts/taste_signals_dedup.py
+>>>>>>> Stashed changes
 ```
 
 The script:
