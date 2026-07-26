@@ -11,13 +11,8 @@ includes:
 - scripts/**
 license: MIT
 metadata:
-<<<<<<< Updated upstream
-  author: Indigo Karasu (indigokarasu)
-  version: 3.6.4
-=======
   author: Indigo Karasu (indigokarasu)
   version: 3.6.5
->>>>>>> Stashed changes
   hermes:
     category: data-science
     tags:
@@ -99,7 +94,6 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 - `taste.sync.spotify` — pull recent Spotify listening history via `scripts/spotify_history_puller.py` (direct API, not MCP); creates/updates music ConsumptionSignals; runs daily via scheduled task. Requires `SPOTIFY_REFRESH_TOKEN` env var.
 
 **Script invocations (for cron/headless use):**
-<<<<<<< Updated upstream
 - Full pipeline (Styx delta + enrichment): `/usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py --limit 200`
 - Styx merchant enrichment (all categories): `cd <hermes-home>/profiles/indigo/skills/ocas-styx/scripts && /usr/bin/python3 styx_universal_enrich.py`
 - Enrichment fix (persist `enriched: true`): `cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 scripts/taste_enrich_fix.py`
@@ -122,32 +116,6 @@ Taste maintains its own preference model in `{agent_root}/commons/data/ocas-tast
 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py
 ```
 Also present (byte-identical, symlink/hardlink-resolved) at `<hermes-home>/skills/ocas-taste/scripts/taste_scan.py` — either path works. The script hardcodes `data_dir = <hermes-home>/commons/data/ocas-taste`; on this system `<hermes-home>/commons` is a symlink to `<hermes-home>/profiles/indigo/commons`, so it resolves to the live dataset (no data split). The older claim that `<hermes-home>/skills/ocas-taste/scripts/` "does not exist" is stale — it does.
-=======
-- Full pipeline (Styx delta + enrichment): `/usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py --limit 200`
-- Styx merchant enrichment (all categories): `cd ~/.hermes/profiles/indigo/skills/ocas-styx/scripts && /usr/bin/python3 styx_universal_enrich.py`
-- Enrichment fix (persist `enriched: true`): `cd ~/.hermes/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 scripts/taste_enrich_fix.py`
-- Email-only historical scan: `/usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-historical 365`
-- Calendar historical scan: `<hermes-venv>/bin/python3.13 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-calendar 365`
-- Signal dedup: `/usr/bin/python3 scripts/taste_signals_dedup.py` — deduplicates signals after enrichment runs. **Takes no arguments** — runs against the default data path. Confirmed working 2026-06-18 (0 dupes found on 4,056 signals; 46 dupes removed on prior run). Must be run from the data directory: `cd ~/.hermes/profiles/indigo/commons/data/ocas-taste`.
-- **Enrichment fix (persist `enriched: true`):** `/usr/bin/python3 scripts/taste_enrich_fix.py` — reliably enriches food/restaurant items via Google Places legacy GET API and persists `enriched: true` on source items. Use after `taste_full_enrich.py` reports success but items remain unenriched. Fixes the `update_item_enriched()` name-matching bug. Supports `--dry-run` and `--limit N`. Confirmed 2026-06-26: fixed The Butcher's Son and Hard Knox Cafe after `taste_full_enrich.py` reported success but left `enriched: false` on disk.
-- **Dispatch-wave dedup:** `/usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/safe_taste_dedup.py` — Styx-SAFE dedup for dispatch-wave duplicates. Keys on `(venue_name, (event_date or date)[:10], extraction_source)`, backs up `signals.jsonl`, and REFUSES to write if the Styx count would drop. Supports `--dry-run`. Run after EVERY dispatch-triggered scan. (The old `dispatch_taste_dedup.py` is UNSAFE — see the ⚠️ block below — never use it.)
-
-- **⚠️ NEVER run `dispatch_taste_dedup.py` — EVER (CRITICAL, 2026-07-22; reaffirmed live 2026-07-23):** It keys on `event_date[:10]`. Email/calendar signals carry `event_date`; **Styx signals carry `date`, not `event_date`** — so every Styx signal collapses to key `(venue_name, None, 'styx')`, and ALL BUT ONE per venue are deleted. This is NOT limited to the daily job: Styx signals persist in the SAME `signals.jsonl` on every wave (confirmed 2026-07-23 — the file contained 34 styx signals side-by-side with 4,233 doordash signals), so running it on a dispatch wave deletes 33/34 styx signals too. On 2026-07-22 it silently deleted 47 of 49 just-ingested Styx signals. **Use `scripts/safe_taste_dedup.py` instead** (keys on `event_date or date`, backs up, refuses to write if Styx count would drop). If `dispatch_taste_dedup.py` was run by mistake: restore from the latest `/tmp/signals.pre-*.jsonl` backup or `signals.jsonl.bak.delta.*` and re-run `safe_taste_dedup.py`. Full incident + recovery recipe: `references/dispatch_dedup_styx_corruption.md`.
-- Signal cleanup (generic meal titles): `/usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/clean_signals.py ~/.hermes/profiles/indigo/commons/data/ocas-taste/signals.jsonl` — removes generic meal titles (Breakfast, Lunch, Dinner, Brunch) and deduplicates on `(venue_name, event_date, extraction_source, domain)`. On 2026-06-16 it removed 5,605 duplicate signals (9,310 → 3,705).
-- Status check: `wc -l ~/.hermes/commons/data/ocas-taste/signals.jsonl ~/.hermes/commons/data/ocas-taste/items.jsonl` (the `taste_scan.py status` command may report 0 due to path resolution issues — use `wc -l` for ground truth)
-
-**IMPORTANT:** `taste_scan.py` must be run with Python 3.13 (`<hermes-venv>/bin/python3.13`), NOT the ocas-taste venv's Python 3.14 (which lacks `googleapiclient`).
-
-- **Python runtime (confirmed 2026-06-25):** Must use `/usr/bin/python3` (system Python 3.14, has `googleapiclient` after install). NOT `<hermes-venv>/bin/python3.13` — path does not exist. NOT ocas-taste venv's Python — symlinks to system 3.14 but lacks googleapiclient.
-  - **Script location:** `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py`
-  - **Data directory:** `~/.hermes/profiles/indigo/commons/data/ocas-taste`
-
-**Script location:** The active scripts are under the indigo profile:
-```
-~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py
-```
-Also present (byte-identical, symlink/hardlink-resolved) at `~/.hermes/skills/ocas-taste/scripts/taste_scan.py` — either path works. The script hardcodes `data_dir = ~/.hermes/commons/data/ocas-taste`; on this system `~/.hermes/commons` is a symlink to `~/.hermes/profiles/indigo/commons`, so it resolves to the live dataset (no data split). The older claim that `~/.hermes/skills/ocas-taste/scripts/` "does not exist" is stale — it does.
->>>>>>> Stashed changes
 
 ## Workflows
 
@@ -332,11 +300,7 @@ Two separate calls WILL fail. The suffix reappears on EVERY OAuth refresh — re
 python3 -c "
 import json, time
 from pathlib import Path
-<<<<<<< Updated upstream
-for email in ['<user-google-email>', '<third-party-or-user-email>']:
-=======
 for email in ['<user-google-email>', '<agent-email>']:
->>>>>>> Stashed changes
     path = Path(f'<gworkspace-creds>/credentials/{email}.json')
     if not path.exists(): continue
     with open(path) as f: d = json.load(f)
@@ -362,11 +326,7 @@ for email in ['<user-google-email>', '<agent-email>']:
 ## Command Pattern
 
 ```bash
-<<<<<<< Updated upstream
 cd <hermes-home>/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
-=======
-cd ~/.hermes/profiles/indigo/commons/data/ocas-taste && /usr/bin/python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
->>>>>>> Stashed changes
 ```
 
 Output: JSON with `signals_created`, `cancellations`, `services_scanned`, plus detailed `extractions` array.
@@ -399,7 +359,6 @@ See `references/self-update-taste.md`.
 - **`scan-historical` DATE BUG — stamps every signal with the scan time (CRITICAL)** — `_extract_from_email` parses the email `Date` header with one rigid `strptime("%a, %d %b %Y %H:%M:%S %z")` and falls back to `datetime.now()` on ANY parse failure. In practice the fallback fires for the vast majority of emails (their `Date` headers don't match that exact format), so all emitted signals get `event_date` = the scan timestamp, NOT the real consumption date. Confirmed 2026-07-07: a 365-day run produced 137/141 signals dated `2026-07-07T09:06:23.xxx` (microsecond-spaced = the loop time). This **maximizes recency bias** — the opposite of the goal — and corrupts the model's temporal decay. **Do NOT use `scan-historical` for historical coverage.** Use `scripts/taste_backfill_v2.py` (designated historical backfill; emits correctly-dated signals, as the existing 5,133-signal dataset shows). Fix: replace the strptime with `email.utils.parsedate_to_datetime()` (robust to varied Date formats). See `references/scan_historical_date_bug.md`.
 - **`scan-historical` is email-only — NOT the full pipeline** — `taste_scan.py scan-historical N` only scans Gmail. It does NOT run Styx delta or enrichment. For the full pipeline (Styx delta + enrichment of unenriched items), use `taste_full_enrich.py` instead. The daily `taste:scan` cron (13:12) runs email/calendar scan then delegates to `taste_full_enrich.py` for Styx delta + enrichment. If OAuth is broken, `scan-historical` fails entirely but `taste_full_enrich.py` still works.
 - **`scan-historical` output is NOT dedupable by `taste_signals_dedup.py`** — The dedup tool's `signal_key` reads `name`/`normalized_name`, but scan signals use `venue_name` and lack `name`/`normalized_name`. All scan signals get an empty venue key and are silently skipped (false "0 dupes" on `--dry-run`). Combined with the date bug above, re-running `scan-historical` over an already-populated dataset silently pollutes it with un-dedupable, mis-dated signals. If you must run it, verify against the actual signal schema (not the tool's count) and revert if dates are wrong.
-<<<<<<< Updated upstream
 - **`taste_scan.py status` and `data-quality` report 0 when run outside the venv** — Both commands use the `TasteSkill` class which resolves `data_dir` differently than the actual data location. Always run via the venv Python (`<hermes-home>/commons/data/ocas-taste/venv/bin/python3`) and verify the data path. For a quick count, use `wc -l signals.jsonl items.jsonl` directly. The `data-quality` subcommand has the same bug as `status` — it is NOT documented in `--help` but it exists and returns 0 for all counts when run outside the venv.
 - **`taste_full_enrich.py` schema drift — prefer inline enrichment** — The script at `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py` generates `item_id` as `item-{safe_name}` (not UUID), uses `strength` field (not `signal_type`), and produces signals with `source: 'enrichment'` that lack the full schema from `references/styx_delta.md`. Items created by this script have `domain: 'restaurant'` instead of `'food'`. **Preferred approach for cron:** write inline Python via `terminal()` that calls Places API directly via `urllib.request` and writes properly structured records. Confirmed 100% enrichment rate with inline approach (2026-06-16, 36/36 transactions).
 - **`Path.home()` resolves to indigo profile home, not `/root`** — When running under the `indigo` Hermes profile, `Path.home()` returns `<hermes-home>/profiles/indigo/home` instead of `/root`. This causes `TasteSkill.__init__` to resolve `data_dir` to the wrong path, and `_save_config()` fails with `FileNotFoundError`. **Fix:** Hardcode `<hermes-home>/commons/data/ocas-taste` as the default `data_dir` instead of using `Path.home()`. Already applied to `taste_scan.py` line 30. Also fix any other `Path.home()` references in the script (e.g., `service_account_path`, `env_path`).
@@ -407,15 +366,6 @@ See `references/self-update-taste.md`.
 - **`taste_scan.py` token paths are absolute** — The script uses hardcoded absolute paths for token files (`<gworkspace-creds>/credentials/<user-google-email>.json` and `<third-party-or-user-email>.json`). If these paths are wrong, update them directly in the script. The script also reads scopes from the token file JSON, so scope mismatches are handled automatically.
 
 - **Styx enrichment is universal; non-food merchants not Places-enrichable** — Enrichment scripts are under `<hermes-home>/profiles/indigo/skills/ocas-styx/scripts/`. Food merchants: 100% coverage via inline Places API. Non-food merchants (financial: loan_payments, income, transfers, bank_fees) return no Places results — use `enrich.py` for name resolution instead.
-=======
-- **`taste_scan.py status` and `data-quality` report 0 when run outside the venv** — Both commands use the `TasteSkill` class which resolves `data_dir` differently than the actual data location. Always run via the venv Python (`~/.hermes/commons/data/ocas-taste/venv/bin/python3`) and verify the data path. For a quick count, use `wc -l signals.jsonl items.jsonl` directly. The `data-quality` subcommand has the same bug as `status` — it is NOT documented in `--help` but it exists and returns 0 for all counts when run outside the venv.
-- **`taste_full_enrich.py` schema drift — prefer inline enrichment** — The script at `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py` generates `item_id` as `item-{safe_name}` (not UUID), uses `strength` field (not `signal_type`), and produces signals with `source: 'enrichment'` that lack the full schema from `references/styx_delta.md`. Items created by this script have `domain: 'restaurant'` instead of `'food'`. **Preferred approach for cron:** write inline Python via `terminal()` that calls Places API directly via `urllib.request` and writes properly structured records. Confirmed 100% enrichment rate with inline approach (2026-06-16, 36/36 transactions).
-- **`Path.home()` resolves to indigo profile home, not `/root`** — When running under the `indigo` Hermes profile, `Path.home()` returns `~/.hermes/profiles/indigo/home` instead of `/root`. This causes `TasteSkill.__init__` to resolve `data_dir` to the wrong path, and `_save_config()` fails with `FileNotFoundError`. **Fix:** Hardcode `~/.hermes/commons/data/ocas-taste` as the default `data_dir` instead of using `Path.home()`. Already applied to `taste_scan.py` line 30. Also fix any other `Path.home()` references in the script (e.g., `service_account_path`, `env_path`).
-- **`email_scan.py` and `run_historical_scans.py` have the same `google_auth_mcp` path issue** — Both scripts use `AGENT_ROOT / 'scripts'` which resolves to the indigo profile home. **Fix:** Hardcode `sys.path.insert(0, str(Path('~/.hermes/scripts')))` — same pattern as the dispatch scripts.
-- **`taste_scan.py` token paths are absolute** — The script uses hardcoded absolute paths for token files (`<gworkspace-creds>/credentials/<user-google-email>.json` and `<agent-email>.json`). If these paths are wrong, update them directly in the script. The script also reads scopes from the token file JSON, so scope mismatches are handled automatically.
-
-- **Styx enrichment is universal; non-food merchants not Places-enrichable** — Enrichment scripts are under `~/.hermes/profiles/indigo/skills/ocas-styx/scripts/`. Food merchants: 100% coverage via inline Places API. Non-food merchants (financial: loan_payments, income, transfers, bank_fees) return no Places results — use `enrich.py` for name resolution instead.
->>>>>>> Stashed changes
 
 - **Mini App ratings feed into Taste as `signal_type: \"rating\"`** — The restaurant-rater Mini App writes ConsumptionSignals with `source: \"miniapp\"` and `signal_type: \"rating\"`. Dedup key: `miniapp:{venue_name}:{date}`. These are high-confidence (confidence=1.0) first-party signals that include `likert_score` (1-5) and `go_back_choice` (\"No\", \"Special Occasions\", \"If Menu Updates\", \"Yes\"). They create/update ItemRecords with `user_rating` and `user_would_go_back` fields. See `restaurant-rater` skill and `taste_bridge.py` for the write pattern.
 
@@ -426,11 +376,7 @@ See `references/self-update-taste.md`.
 
 - **Re-auth, dedup scripts** — `google_oauth_init.py` only handles the agent's account (hardcoded line 141). For <operator>'s re-auth, build the OAuth URL manually with PKCE. `taste_signals_dedup.py` is the correct post-enrichment dedup tool (not `clean_signals.py`). `dispatch_taste_dedup.py` lives under `skills/ocas-taste/scripts/` (NOT `commons/data/`) — always use absolute path.
 
-<<<<<<< Updated upstream
 - **Google Places API key, inline enrichment, schema drift** — API key is in `<hermes-home>/secrets/plaid.env` (not env var). Inline enrichment (direct urllib to legacy GET API) preferred over `taste_full_enrich.py` which has schema drift (`item-{safe_name}` not UUID, `strength` not `signal_type`). The v1 POST API returns 400 from inline Python — use legacy GET. `taste_full_enrich.py` also enriches existing unenriched items but doesn't set `enriched: true` (use `taste_enrich_fix.py` after).
-=======
-- **Google Places API key, inline enrichment, schema drift** — API key is in `~/.hermes/secrets/plaid.env` (not env var). Inline enrichment (direct urllib to legacy GET API) preferred over `taste_full_enrich.py` which has schema drift (`item-{safe_name}` not UUID, `strength` not `signal_type`). The v1 POST API returns 400 from inline Python — use legacy GET. `taste_full_enrich.py` also enriches existing unenriched items but doesn't set `enriched: true` (use `taste_enrich_fix.py` after).
->>>>>>> Stashed changes
 
 - **Token expiry timezone suffix breaks `from_authorized_user_file()`** — Google OAuth token files may contain `expiry: \"2026-06-17T17:41:40+00:00\"` (ISO 8601 with timezone). The `google.oauth2.credentials.Credentials.from_authorized_user_file()` parser uses `strptime` with `%Y-%m-%dT%H:%M:%S` and fails with `\"unconverted data remains: +00:00\"`. **Diagnosis:** Check `expiry` field format with `python3 -c \"import json; d=json.load(open('<gworkspace-creds>/credentials/<email>.json')); print(repr(d.get('expiry')))\"`. **Fix:** Strip the timezone suffix: `d['expiry'] = d['expiry'][:19]` and rewrite the file. This is a one-time fix per token file — the refreshed token will get a new `expiry` field that may or may not include the suffix depending on the OAuth library version. **Always check and fix the token expiry before running `taste_scan.py`** — the scan will fail silently or produce 0 results if the token can't be loaded. Also check for float expiry values (see next gotcha).
 - **Token expiry stored as float instead of string** — Some token files store `expiry` as a Unix timestamp float (e.g., `1782328557.213807`) instead of an ISO string. The Taste script calls `.rstrip()` on this and crashes with `AttributeError: 'float' object has no attribute 'rstrip'`. **Fix:** Replace with ISO string: `d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time() + 3600))`. See `references/token-repair.md` for the combined repair script.
@@ -474,11 +420,7 @@ See `references/self-update-taste.md`.
 | `references/script_inventory.md` | When choosing which script to run; what each script does and its auth requirements |
 | `scripts/taste_full_enrich.py` | Full pipeline: styx + email + existing unenriched items |
 | `scripts/taste_enrich_fix.py` | Fix failed enrichment persistence — re-enriches items and sets `enriched: true`. Use after `taste_full_enrich.py` reports success but items remain unenriched. |
-<<<<<<< Updated upstream
 | `scripts/taste_signals_dedup.py` | Signal deduplication — run after enrichment passes. **Actual path:** `<hermes-home>/profiles/indigo/commons/data/ocas-taste/scripts/taste_signals_dedup.py`. Takes no arguments. Confirmed working 2026-06-18. |
-=======
-| `scripts/taste_signals_dedup.py` | Signal deduplication — run after enrichment passes. **Actual path:** `~/.hermes/profiles/indigo/commons/data/ocas-taste/scripts/taste_signals_dedup.py`. Takes no arguments. Confirmed working 2026-06-18. |
->>>>>>> Stashed changes
 | `scripts/taste_cleanup_and_enrich.py` | Cross-source dedup + retry failed enrichments |
 | `scripts/safe_taste_dedup.py` | **Styx-safe** dispatch-wave dedup — keys on `event_date or date`, backs up, refuses to write if Styx count would drop. Run after every dispatch scan (`--dry-run` supported). |
 | `scripts/fix_styx_dedup.py` | Merge Styx truncation duplicates + remap signals; always run `--dry-run` first |
