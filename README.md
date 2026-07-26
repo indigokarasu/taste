@@ -8,11 +8,7 @@ Behavior-driven taste model built from real consumption signals. Scans
 **Version:** 3.6.4
 **Type:** 
 **Layer:** data-science
-<<<<<<< Updated upstream
-**Author:** Indigo Karasu
-=======
 **Author:** <agent-name>
->>>>>>> Stashed changes
 
 ---
 
@@ -42,13 +38,8 @@ Behavior-driven taste model built from real consumption signals. Scans
 - **`scan-historical` DATE BUG — stamps every signal with the scan time (CRITICAL)** — `_extract_from_email` parses the email `Date` header with one rigid `strptime("%a, %d %b %Y %H:%M:%S %z")` and falls back to `datetime.now()` on ANY parse failure. In practice the fallback fires for the vast majority of emails (their `Date` headers don't match that exact format), so all emitted signals get `event_date` = the scan timestamp, NOT the real consumption date. Confirmed 2026-07-07: a 365-day run produced 137/141 signals dated `2026-07-07T09:06:23.xxx` (microsecond-spaced = the loop time). This **maximizes recency bias** — the opposite of the goal — and corrupts the model's temporal decay. **Do NOT use `scan-historical` for historical coverage.** Use `scripts/taste_backfill_v2.py` (designated historical backfill; emits correctly-dated signals, as the existing 5,133-signal dataset shows). Fix: replace the strptime with `email.utils.parsedate_to_datetime()` (robust to varied Date formats). See `references/scan_historical_date_bug.md`.
 - **`scan-historical` is email-only — NOT the full pipeline** — `taste_scan.py scan-historical N` only scans Gmail. It does NOT run Styx delta or enrichment. For the full pipeline (Styx delta + enrichment of unenriched items), use `taste_full_enrich.py` instead. The daily `taste:scan` cron (13:12) runs email/calendar scan then delegates to `taste_full_enrich.py` for Styx delta + enrichment. If OAuth is broken, `scan-historical` fails entirely but `taste_full_enrich.py` still works.
 - **`scan-historical` output is NOT dedupable by `taste_signals_dedup.py`** — The dedup tool's `signal_key` reads `name`/`normalized_name`, but scan signals use `venue_name` and lack `name`/`normalized_name`. All scan signals get an empty venue key and are silently skipped (false "0 dupes" on `--dry-run`). Combined with the date bug above, re-running `scan-historical` over an already-populated dataset silently pollutes it with un-dedupable, mis-dated signals. If you must run it, verify against the actual signal schema (not the tool's count) and revert if dates are wrong.
-<<<<<<< Updated upstream
 - **`taste_scan.py status` and `data-quality` report 0 when run outside the venv** — Both commands use the `TasteSkill` class which resolves `data_dir` differently than the actual data location. Always run via the venv Python (`<hermes-home>/commons/data/ocas-taste/venv/bin/python3`) and verify the data path. For a quick count, use `wc -l signals.jsonl items.jsonl` directly. The `data-quality` subcommand has the same bug as `status` — it is NOT documented in `--help` but it exists and returns 0 for all counts when run outside the venv.
 - **`taste_full_enrich.py` schema drift — prefer inline enrichment** — The script at `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py` generates `item_id` as `item-{safe_name}` (not UUID), uses `strength` field (not `signal_type`), and produces signals with `source: 'enrichment'` that lack the full schema from `references/styx_delta.md`. Items created by this script have `domain: 'restaurant'` instead of `'food'`. **Preferred approach for cron:** write inline Python via `terminal()` that calls Places API directly via `urllib.request` and writes properly structured records. Confirmed 100% enrichment rate with inline approach (2026-06-16, 36/36 transactions).
-=======
-- **`taste_scan.py status` and `data-quality` report 0 when run outside the venv** — Both commands use the `TasteSkill` class which resolves `data_dir` differently than the actual data location. Always run via the venv Python (`~/.hermes/commons/data/ocas-taste/venv/bin/python3`) and verify the data path. For a quick count, use `wc -l signals.jsonl items.jsonl` directly. The `data-quality` subcommand has the same bug as `status` — it is NOT documented in `--help` but it exists and returns 0 for all counts when run outside the venv.
-- **`taste_full_enrich.py` schema drift — prefer inline enrichment** — The script at `~/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py` generates `item_id` as `item-{safe_name}` (not UUID), uses `strength` field (not `signal_type`), and produces signals with `source: 'enrichment'` that lack the full schema from `references/styx_delta.md`. Items created by this script have `domain: 'restaurant'` instead of `'food'`. **Preferred approach for cron:** write inline Python via `terminal()` that calls Places API directly via `urllib.request` and writes properly structured records. Confirmed 100% enrichment rate with inline approach (2026-06-16, 36/36 transactions).
->>>>>>> Stashed changes
 
 ---
 
