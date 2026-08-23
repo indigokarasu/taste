@@ -34,7 +34,11 @@ class TasteSkill:
     """Taste skill implementation for consumption signal extraction and enrichment"""
 
     def __init__(self, data_dir: str = None):
-        self.data_dir = Path(data_dir) if data_dir else Path("<hermes-home>/commons/data/ocas-taste")
+        if not data_dir:
+            # Resolve real data dir; commons -> profiles/indigo/commons on this profile
+            _root = os.environ.get("AGENT_ROOT", os.environ.get("AGENT_ROOT", os.path.join(os.path.expanduser("~"), ".hermes")))
+            data_dir = os.path.join(_root, "commons", "data", "ocas-taste")
+        self.data_dir = Path(data_dir)
         self.config_file = self.data_dir / "config.json"
         self.signals_file = self.data_dir / "signals.jsonl"
         self.items_file = self.data_dir / "items.jsonl"
