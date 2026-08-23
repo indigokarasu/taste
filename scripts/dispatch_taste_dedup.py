@@ -14,6 +14,7 @@ Or with dry-run:
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -23,7 +24,7 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     sys.exit(0)
 
 
-DATA_DIR = Path("<hermes-home>/profiles/<profile>/commons/data/ocas-taste")
+DATA_DIR = Path(os.environ.get("AGENT_ROOT", os.environ.get("AGENT_ROOT", os.path.join(os.path.expanduser("~"), ".hermes")))).joinpath("profiles/indigo/commons/data/ocas-taste")
 SIGNALS_FILE = DATA_DIR / "signals.jsonl"
 
 DRY_RUN = "--dry-run" in sys.argv

@@ -12,7 +12,7 @@ includes:
 license: MIT
 metadata:
   author: Indigo Karasu (indigokarasu)
-  version: 3.6.5
+  version: 3.6.6
   hermes:
     category: data-science
     tags:
@@ -257,6 +257,13 @@ See `references/storage_layout.md` for data directory structure and enrichment p
 
 See `references/spotify_sync.md` for the full sync procedure.
 
+**Interactive OAuth helper (one-time setup):** When `SPOTIFY_REFRESH_TOKEN` is absent from `.env`, the cron job cannot be fixed headlessly. The staged fix path is:
+1. `scripts/spotify_auth_helper.py` — performs the interactive Spotify OAuth Authorization Code flow (auto mode: opens browser + local callback server on port 8888; `--manual` mode: prints URL, paste redirect). Writes `commons/data/ocas-taste/music/spotify_token.json`.
+2. `scripts/apply_spotify_token_to_env.py` — bridges the file token into `~/.hermes/profiles/indigo/.env` as `SPOTIFY_REFRESH_TOKEN`.
+3. `hermes cron run e0a126b6c9f7` — verify the cron resumes cleanly.
+
+See `references/spotify_oauth_fix.md` for the full manual procedure.
+
 ## Journal outputs
 
 See `references/journal.md` for journal format. All signal ingestion, scan, enrichment, query, and report runs write observation journals.
@@ -281,16 +288,33 @@ The 13:12 `taste:scan` job runs the full pipeline: email/calendar scan → **Sty
 
 ### Dispatch-triggered scan (cron/dispatch)
 
+When the dispatcher triggers a taste scan (via `taste_new_data` dispatch or cron), the workflow is:
+
+1. **Token repair** — run the combined repair script (see Pre-Scan Token Repair above) BEFORE the scan. Race condition: OAuth refreshes the token between separate terminal calls, re-adding the `+00:00` suffix. Chain repair + scan in a single `terminal()` invocation.
+2. **Run `taste_scan.py scan-incremental 24`** — email-only incremental scan for the last 24h. Do NOT use `taste_full_enrich.py` (Styx delta only, not email/calendar) or `scan-historical` (date bug, see Gotchas).
+3. **Run `dispatch_taste_dedup.py --dry-run`** — broader dedup for dispatch-wave duplicates. The key `(venue_name, event_date[:10], extraction_source)` catches dupes that `taste_signals_dedup.py` misses. ALWAYS run `--dry-run` first and confirm it opens `signals.jsonl` (printed `Total signals: N`) before applying. If dry-run can't find the file, the applied run also silently no-ops and the journal's `dedup_removed` lies.
+4. **Run `dispatch_taste_dedup.py --apply-taste`** — apply the dedup. Check the output for `Written.` confirmation.
+5. **Verify counts** — `wc -l signals.jsonl items.jsonl` for ground truth. The `taste_scan.py status` command may report 0 due to path resolution issues.
+
+**⚠️ dispatch_taste_dedup.py path:** Script lives under `skills/ocas-taste/scripts/`, NOT `commons/data/`. Always use absolute path: `/usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py`. Must be run from the data directory (`cd <data_dir>`) but the script is NOT in the data directory — it resolves paths internally via `AGENT_ROOT`.
+
+**⚠️ dispatch_taste_dedup.py `<hermes-home>` placeholder bug (FIXED 2026-07-26):** If you ever see `ERROR: <hermes-home>/profiles/<profile>/.../signals.jsonl not found` from this script, it still carries the placeholder — patch line 26 the same way; do NOT trust a `dedup_removed: 0` journal line as evidence of no duplicates. Always run `--dry-run` FIRST and confirm it actually opens `signals.jsonl` (printed `Total signals: N`) before applying. The dispatch runner invokes it with `--dry-run` then `--apply-taste`; if the dry-run can't find the file, the applied run also silently no-ops.
+
 ## Pre-Scan Token Repair (REQUIRED)
 
-Before running ANY taste scan, validate and repair token format. Two failure modes exist and have hit simultaneously on multiple dispatch waves (confirmed 2026-06-24):
+Before running ANY taste scan, validate and repair token format. **Five** failure modes exist (confirmed across 2026-06 through 2026-07-27):
 
-1. **Timezone suffix** (`+00:00` or `Z`): `google.auth2.credentials.Credentials` parser fails with `\"unconverted data remains: +00:00\"`. Fix: `d['expiry'] = d['expiry'][:19]`
+1. **Timezone suffix** (`+00:00` or `Z`): `google.auth2.credentials.Credentials` parser fails with `"unconverted data remains: +00:00"`. Fix: `d['expiry'] = d['expiry'][:19]`
 2. **Float expiry** (Unix timestamp instead of ISO string): `.rstrip()` call fails with `'float' object has no attribute 'rstrip'`. Fix: `d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time() + 3600))`
+3. **Microsecond suffix** (`.811606`): NOT matched by the `+`/`Z` check; still crashes on `from_authorized_user_file()`. Fix: strip `.NNNNNN` before `[:19]`.
+4. **Numeric-string expiry** (Unix timestamp stored as a *quoted* JSON string, e.g. `"1784952387"`): `json.load` yields `str`, so the float branch misses it and the suffix branch passes it through untouched → crashes. Fix: detect a pure-digit string and convert via `time.localtime(int(s))`. **Confirmed 2026-07-26** (`mx.indigo.karasu@gmail.com.json`).
+5. **Microsecond fraction + Z suffix** (e.g. `"2026-07-27T18:23:50.151160Z"`): Both microsecond fraction AND `Z` present simultaneously. The combined repair script handles this — strip `Z` first, then strip `.` and fractional seconds — but if you hand-roll a fix, the ordering matters. **Confirmed 2026-07-27** (`mx.indigo.karasu@gmail.com.json`).
+
+The combined repair script in `references/token-repair.md` handles ALL FIVE modes. Use that script — do not hand-roll a partial fix.
 
 **⚠️ CRITICAL RACE CONDITION (confirmed 2026-06-25 dispatch #65):** The OAuth library refreshes the token on every `google_auth.py` initialization. If you run the repair as one `terminal()` call and the scan as a SEPARATE call, the OAuth refresh happens between them — re-adding the `+00:00` suffix. You MUST chain repair + scan in a SINGLE `terminal()` invocation:
 ```bash
-python3 -c \"<repair script>\" && cd <data_dir> && /usr/bin/python3 <scan_script>
+python3 -c "<repair script>" && cd <data_dir> && /usr/bin/python3 <scan_script>
 ```
 Two separate calls WILL fail. The suffix reappears on EVERY OAuth refresh — repair is mandatory before every scan, not a one-time fix.
 
@@ -298,11 +322,12 @@ Two separate calls WILL fail. The suffix reappears on EVERY OAuth refresh — re
 
 ```bash
 python3 -c "
-import json, time
+import json, time, re, os
 from pathlib import Path
-for email in ['<user-google-email>', '<agent-email>']:
-    path = Path(f'<gworkspace-creds>/credentials/{email}.json')
-    if not path.exists(): continue
+cred_dir = Path(os.environ.get('GOOGLE_MCP_CREDENTIALS',
+                               Path.home() / '.google_workspace_mcp/credentials'))
+for path in sorted(cred_dir.glob('*.json')):
+    email = path.stem
     with open(path) as f: d = json.load(f)
     expiry = d.get('expiry', '')
     if isinstance(expiry, float):
@@ -311,18 +336,19 @@ for email in ['<user-google-email>', '<agent-email>']:
         s = expiry
         if '+' in s: s = s[:s.index('+')]
         elif s.endswith('Z'): s = s[:-1]
-        if '.' in s: s = s[:s.index('.')]   # strip fractional seconds (e.g. '.811606')
+        if '.' in s: s = s[:s.index('.')]   # strip fractional seconds (e.g. '.151160')
         if s != expiry:
             d['expiry'] = s
             with open(path, 'w') as f: json.dump(d, f, indent=2)
             print('repaired', email, repr(expiry), '->', s)
+"
 ```
 
-> Three failure modes are now handled: float expiry, `+00:00`/`Z` suffix, and
-> **microsecond suffix (`.811606`)** — the latter is NOT matched by the `+`/`Z` check
-> and will still crash `from_authorized_user_file()` with `unconverted data remains`.
-> Confirmed real on 2026-07-15 (<operator>'s token).
-
+> Five failure modes are now handled: float expiry, `+00:00`/`Z` suffix,
+> **microsecond suffix (`.811606`)**, **numeric-string expiry**, and
+> **microsecond+fraction+Z combo (`.151160Z`)** — the latter is not matched
+> by the `+`/`Z` check alone (the `.` stripping handles it). Confirmed real
+> on 2026-07-15 (operator token) and 2026-07-27 (mx.indigo token).
 ## Command Pattern
 
 ```bash
@@ -361,8 +387,12 @@ See `references/self-update-taste.md`.
 - **`scan-historical` output is NOT dedupable by `taste_signals_dedup.py`** — The dedup tool's `signal_key` reads `name`/`normalized_name`, but scan signals use `venue_name` and lack `name`/`normalized_name`. All scan signals get an empty venue key and are silently skipped (false "0 dupes" on `--dry-run`). Combined with the date bug above, re-running `scan-historical` over an already-populated dataset silently pollutes it with un-dedupable, mis-dated signals. If you must run it, verify against the actual signal schema (not the tool's count) and revert if dates are wrong.
 - **`taste_scan.py status` and `data-quality` report 0 when run outside the venv** — Both commands use the `TasteSkill` class which resolves `data_dir` differently than the actual data location. Always run via the venv Python (`<hermes-home>/commons/data/ocas-taste/venv/bin/python3`) and verify the data path. For a quick count, use `wc -l signals.jsonl items.jsonl` directly. The `data-quality` subcommand has the same bug as `status` — it is NOT documented in `--help` but it exists and returns 0 for all counts when run outside the venv.
 - **`taste_full_enrich.py` schema drift — prefer inline enrichment** — The script at `<hermes-home>/profiles/indigo/skills/ocas-taste/scripts/taste_full_enrich.py` generates `item_id` as `item-{safe_name}` (not UUID), uses `strength` field (not `signal_type`), and produces signals with `source: 'enrichment'` that lack the full schema from `references/styx_delta.md`. Items created by this script have `domain: 'restaurant'` instead of `'food'`. **Preferred approach for cron:** write inline Python via `terminal()` that calls Places API directly via `urllib.request` and writes properly structured records. Confirmed 100% enrichment rate with inline approach (2026-06-16, 36/36 transactions).
-- **`Path.home()` resolves to indigo profile home, not `/root`** — When running under the `indigo` Hermes profile, `Path.home()` returns `<hermes-home>/profiles/indigo/home` instead of `/root`. This causes `TasteSkill.__init__` to resolve `data_dir` to the wrong path, and `_save_config()` fails with `FileNotFoundError`. **Fix:** Hardcode `<hermes-home>/commons/data/ocas-taste` as the default `data_dir` instead of using `Path.home()`. Already applied to `taste_scan.py` line 30. Also fix any other `Path.home()` references in the script (e.g., `service_account_path`, `env_path`).
+- **`taste_scan.py` default `data_dir` was the literal `<hermes-home>` placeholder (NOT fixed until 2026-07-26)** — The constructor default `Path("<hermes-home>/commons/data/ocas-taste")` was still present and never resolved (the "Path.home() already fixed on line 30" note was WRONG — the file literally contained the placeholder string). Symptom: scan initializes Gmail/Calendar fine, then crashes at `_save_config()` / `FileNotFoundError: '<hermes-home>/commons/data/ocas-taste/config.json'`. **Fix applied 2026-07-26:** the constructor now resolves `os.environ.get("AGENT_ROOT", "/root/.hermes")` + `commons/data/ocas-taste` when no `data_dir` is passed. If you see the literal `<hermes-home>` path in a traceback, re-apply that patch. The SAME placeholder defect lives in `verify_taste_delta.py` (its default `DATA = "<hermes-home>/commons/data/ocas-taste"`) — it only runs if you pass `--data-dir <real-path>`. `dispatch_taste_dedup.py` had the same bug (fixed 2026-07-26, see its gotcha below).
 - **`email_scan.py` and `run_historical_scans.py` have the same `google_auth_mcp` path issue** — Both scripts use `AGENT_ROOT / 'scripts'` which resolves to the indigo profile home. **Fix:** Hardcode `sys.path.insert(0, str(Path('<hermes-home>/scripts')))` — same pattern as the dispatch scripts.
+- **`verify_taste_delta.py` default `DATA` is the `<hermes-home>` placeholder** — Running it bare crashes: `FileNotFoundError: '<hermes-home>/commons/data/ocas-taste/items.jsonl'`. **Always invoke with `--data-dir <real-path>`:** `/usr/bin/python3 scripts/verify_taste_delta.py --data-dir /root/.hermes/commons/data/ocas-taste`. It exits 0 with `VERIFY PASSED` on success; non-zero on any integrity violation. A "N created" return from the delta script is testimony, not proof — this verify step is the proof.
+
+- **`scan_email_incremental` silently creates 0 signals if `config.json` (email_sources) is absent** — The scan reads its sender allowlist from `config.json` under `email_sources`. If that key (or the file) is missing, the service loop iterates zero services → `services_scanned: []`, `signals_created: 0`, and the only trace is a missing `config.json`. **Contract:** `config.json` MUST exist with an `email_sources` block (see `references/email_extraction.md` for the 8-service allowlist shape). If a daily scan reports 0 email signals with no error, check `config.json` exists before assuming "no new mail." Calendar scan is independent of this (it enumerates calendars directly).
+
 - **`taste_scan.py` token paths are absolute** — The script uses hardcoded absolute paths for token files (`<gworkspace-creds>/credentials/<user-google-email>.json` and `<third-party-or-user-email>.json`). If these paths are wrong, update them directly in the script. The script also reads scopes from the token file JSON, so scope mismatches are handled automatically.
 
 - **Styx enrichment is universal; non-food merchants not Places-enrichable** — Enrichment scripts are under `<hermes-home>/profiles/indigo/skills/ocas-styx/scripts/`. Food merchants: 100% coverage via inline Places API. Non-food merchants (financial: loan_payments, income, transfers, bank_fees) return no Places results — use `enrich.py` for name resolution instead.
@@ -375,6 +405,7 @@ See `references/self-update-taste.md`.
 - **Spotify puller & Python venv issues** — Spotify puller fails silently on missing `SPOTIFY_REFRESH_TOKEN` (check `music/spotify_sync_checkpoint.json`). The ocas-taste venv uses Python 3.14 lacking `googleapiclient` — use `<hermes-venv>/bin/python3.13` instead.
 
 - **Re-auth, dedup scripts** — `google_oauth_init.py` only handles the agent's account (hardcoded line 141). For <operator>'s re-auth, build the OAuth URL manually with PKCE. `taste_signals_dedup.py` is the correct post-enrichment dedup tool (not `clean_signals.py`). `dispatch_taste_dedup.py` lives under `skills/ocas-taste/scripts/` (NOT `commons/data/`) — always use absolute path.
+- **`dispatch_taste_dedup.py` `<hermes-home>` placeholder bug (FIXED 2026-07-26):** Until that date the script hardcoded `DATA_DIR = Path("<hermes-home>/profiles/<profile>/commons/data/ocas-taste")` — the SAME literal `<hermes-home>` / `profiles/<profile>` defect that hit the ocas-forge closure scripts (see `references/closure-scripts-hermes-home-placeholder-bug.md` in ocas-forge). Every run printed `ERROR: <hermes-home>/profiles/<profile>/commons/data/ocas-taste/signals.jsonl not found` and SILENTLY SKIPPED dedup — so a `dispatch-wave` taste journal reporting `dedup_removed: 0` / `signals_total_after == signals_total_before` was NOT proof of a clean signal store; real duplicates persisted across waves. Fixed by resolving `os.environ.get("AGENT_ROOT", "/root/.hermes")` + `profiles/indigo/commons/data/ocas-taste` and adding `import os`. **Detection / re-occurrence guard:** if you ever see `ERROR: <hermes-home>/profiles/<profile>/.../signals.jsonl not found` from this script, it still carries the placeholder — patch line 26 the same way; do NOT trust a `dedup_removed: 0` journal line as evidence of no duplicates. Always run `--dry-run` FIRST and confirm it actually opens `signals.jsonl` (printed `Total signals: N`) before applying. The dispatch runner (`run_mixed_wave_closure.py`) invokes it with `--dry-run` then `--apply-taste`; if the dry-run can't find the file, the applied run also silently no-ops and the journal's `dedup_removed` lies.
 
 - **Google Places API key, inline enrichment, schema drift** — API key is in `<hermes-home>/secrets/plaid.env` (not env var). Inline enrichment (direct urllib to legacy GET API) preferred over `taste_full_enrich.py` which has schema drift (`item-{safe_name}` not UUID, `strength` not `signal_type`). The v1 POST API returns 400 from inline Python — use legacy GET. `taste_full_enrich.py` also enriches existing unenriched items but doesn't set `enriched: true` (use `taste_enrich_fix.py` after).
 
@@ -392,7 +423,7 @@ See `references/self-update-taste.md`.
 | `references/automation.md` | When troubleshooting cron jobs or backup failures |
 | `references/backup.md` | Backup/restore procedures, LFS tracking, disk space management |
 | `references/config.default.json` | On `taste.init`; template for a fresh config.json |
-| `references/token-repair.md` | **Token repair patterns** — two failure modes (timezone suffix + float expiry), combined repair script, confirmed incidents. Run before every scan. |
+| `references/token-repair.md` | **Token repair patterns** — five failure modes (timezone suffix, float expiry, microsecond suffix, numeric-string expiry, microsecond+fraction+Z combo), hardened combined repair script with real credential paths, confirmed incidents. Run before every scan. |
 | `references/email_extraction.md` | Before running taste.scan; sender allowlist and dedup rules |
 | `references/enrichment.md` | Before running taste.enrich.item; what to extract per domain, false-positive filtering, dedup |
 | `references/historical_scan_auth.md` | Before running historical email or calendar scans |
