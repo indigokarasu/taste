@@ -6,9 +6,9 @@ Five distinct failure modes exist — confirmed across 2026-06 through 2026-07-2
 
 Token files live under the Google Workspace MCP credentials directory, NOT under the Hermes credentials directory:
 
-- **User account:** `/root/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json`
+- **User account:** `~/.google_workspace_mcp/credentials/mx.indigo.karasu@gmail.com.json`
 - **Agent/operator account:** `~/.google_workspace_mcp/credentials/<account-email>.json`
-- **Symlinks** at `/root/.google_workspace_mcp/credentials/operator_email.json` → operator account, `agent_email.json` → user account (read-only; do not write through symlinks — write to the real file).
+- **Symlinks** at `~/.google_workspace_mcp/credentials/operator_email.json` → operator account, `agent_email.json` → user account (read-only; do not write through symlinks — write to the real file).
 
 The old `<gworkspace-creds>/credentials/` path is a placeholder — use the actual paths above.
 
@@ -63,8 +63,8 @@ python3 -c "
 import json, time, re
 from pathlib import Path
 
-for email in ['mx.indigo.karasu@gmail.com', 'jared.zimmerman@gmail.com']:
-    path = Path(f'/root/.google_workspace_mcp/credentials/{email}.json')
+for email in ['mx.indigo.karasu@gmail.com', '<operator-email>']:
+    path = Path(f'~/.google_workspace_mcp/credentials/{email}.json')
     if not path.exists():
         print(f'{email}: NO TOKEN FILE')
         continue
@@ -112,7 +112,7 @@ As of dispatch #68, token repair has been required on **every single Taste scan*
 
 **Fix:** Chain repair + scan in ONE `terminal()` call:
 ```bash
-python3 -c "<repair script above>" && cd /root/.hermes/commons/data/ocas-taste && /usr/bin/python3 /root/.hermes/profiles/indigo/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
+python3 -c "<repair script above>" && cd $AGENT_ROOT/commons/data/ocas-taste && /usr/bin/python3 $HERMES_HOME/skills/ocas-taste/scripts/taste_scan.py scan-incremental 24
 ```
 The repair writes the clean token, then the scan reads it in the same process — no refresh cycle can fire between them.
 

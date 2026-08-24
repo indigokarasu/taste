@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bridge script: after Jared completes the Spotify OAuth Authorization Code
+Bridge script: after the operator completes the Spotify OAuth Authorization Code
 flow (which writes the refresh token to
   commons/data/ocas-taste/music/spotify_token.json
 via spotify_auth_helper.py), copy that refresh token into
@@ -20,7 +20,7 @@ import os
 import sys
 from pathlib import Path
 
-HERMES_HOME = Path(os.environ.get("HERMES_HOME") or "/root/.hermes/profiles/indigo")
+HERMES_HOME = Path(os.environ.get("HERMES_HOME") or os.environ.get("HERMES_HOME", os.path.join(os.path.expanduser("~"), ".hermes", "profiles", "indigo")))
 TOKEN_FILE = HERMES_HOME / "commons/data/ocas-taste/music/spotify_token.json"
 ENV_FILE = HERMES_HOME / ".env"
 

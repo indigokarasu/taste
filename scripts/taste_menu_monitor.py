@@ -18,13 +18,16 @@ import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
+_PROF = os.environ.get("HERMES_HOME",
+                       os.path.join(os.path.expanduser("~"), ".hermes", "profiles", "indigo"))
+
 _HELP_ARGS = {"--help", "-h"}
 if set(sys.argv[1:]) & _HELP_ARGS:
     print((__doc__ or "").strip() or "Usage: python3 taste_menu_monitor.py")
     sys.exit(0)
 
 
-DATA_DIR = Path("<hermes-home>/profiles/<profile>/commons/data/ocas-taste")
+DATA_DIR = Path(_PROF) / "commons" / "data" / "ocas-taste"
 SNAPSHOTS_DIR = DATA_DIR / "menu_snapshots"
 REPORTS_DIR = DATA_DIR / "menu_reports"
 CONFIG_FILE = DATA_DIR / "menu_monitor.json"
