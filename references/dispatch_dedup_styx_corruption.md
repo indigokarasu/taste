@@ -27,7 +27,7 @@ only the first per venue — silently destroying the rest.
 2. Verify the snapshot is clean: `python3 scripts/verify_taste_delta.py` → expect only the
    pre-existing 1 orphan (a stale June-20 Rainbow Grocery signal), zero dupes.
 3. Re-run the Styx delta with the corrected script (atomic, self-healing):
-   `python3 ~/.hermes/profiles/indigo/skills/ocas-taste/scripts/styx_delta_corrected.py`
+   `python3 $HERMES_HOME/../indigo/skills/ocas-taste/scripts/styx_delta_corrected.py`
 4. Re-verify: `python3 scripts/verify_taste_delta.py` → must print `VERIFY PASSED (EXIT=0)`.
 
 ## Durable rules (do NOT violate)

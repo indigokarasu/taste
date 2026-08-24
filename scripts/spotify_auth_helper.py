@@ -14,13 +14,13 @@ what the cron puller (spotify_history_puller.py) reads.
 
 Usage:
   # Auto mode (default): opens browser, starts a local callback server.
-  /root/hermes-agent/.venv/bin/python spotify_auth_helper.py
+  python3 spotify_auth_helper.py
 
   # Manual mode: prints the authorize URL, you paste the redirected URL back.
-  /root/hermes-agent/.venv/bin/python spotify_auth_helper.py --manual
+  python3 spotify_auth_helper.py --manual
 
 After this succeeds, run the bridge:
-  /root/hermes-agent/.venv/bin/python apply_spotify_token_to_env.py
+  python3 apply_spotify_token_to_env.py
 
 Requires: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI
 (env vars, read from the profile .env). REDIRECT_URI must match the Spotify
@@ -194,7 +194,7 @@ def main():
         run_auto(client_id, client_secret, redirect_uri)
 
     print("\nNext: bridge the token into .env so the cron puller can read it:")
-    print("  /root/hermes-agent/.venv/bin/python apply_spotify_token_to_env.py")
+    print("  python3 apply_spotify_token_to_env.py")
     print("Then verify: hermes cron run e0a126b6c9f7")
 
 
