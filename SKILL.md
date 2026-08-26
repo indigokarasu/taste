@@ -15,6 +15,16 @@ metadata:
   version: 3.6.6
   hermes:
     category: data-science
+    config:
+      - key: SPOTIFY_REFRESH_TOKEN
+        description: OAuth refresh token for Spotify listening-history sync
+        default: ""
+      - key: GOOGLE_PLACES_API_KEY
+        description: Google Places API key used by Styx delta ingestion (no OAuth)
+        default: ""
+      - key: GOOGLE_MCP_CREDENTIALS
+        description: Directory containing Google OAuth token JSON files
+        default: ~/.google_workspace_mcp/credentials
     tags:
     - preferences
     - recommendations
@@ -296,9 +306,7 @@ When the dispatcher triggers a taste scan (via `taste_new_data` dispatch or cron
 4. **Run `dispatch_taste_dedup.py --apply-taste`** — apply the dedup. Check the output for `Written.` confirmation.
 5. **Verify counts** — `wc -l signals.jsonl items.jsonl` for ground truth. The `taste_scan.py status` command may report 0 due to path resolution issues.
 
-**⚠️ dispatch_taste_dedup.py path:** Script lives under `skills/ocas-taste/scripts/`, NOT `commons/data/`. Always use absolute path: `/usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py`. Must be run from the data directory (`cd <data_dir>`) but the script is NOT in the data directory — it resolves paths internally via `AGENT_ROOT`.
-
-**⚠️ dispatch_taste_dedup.py `<hermes-home>` placeholder bug (FIXED 2026-07-26):** If you ever see `ERROR: <hermes-home>/profiles/<profile>/.../signals.jsonl not found` from this script, it still carries the placeholder — patch line 26 the same way; do NOT trust a `dedup_removed: 0` journal line as evidence of no duplicates. Always run `--dry-run` FIRST and confirm it actually opens `signals.jsonl` (printed `Total signals: N`) before applying. The dispatch runner invokes it with `--dry-run` then `--apply-taste`; if the dry-run can't find the file, the applied run also silently no-ops.
+**⚠️ dispatch_taste_dedup.py path:** Script lives under `skills/ocas-taste/scripts/`, NOT `commons/data/`. Always use absolute path: `/usr/bin/python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/dispatch_taste_dedup.py`. Must be run from the data directory (`cd <data_dir>`) but the script is NOT in the data directory — it resolves paths internally via `AGENT_ROOT`. Placeholder-bug detection rules: see the Gotchas entry.
 
 ## Pre-Scan Token Repair (REQUIRED)
 
@@ -318,37 +326,7 @@ python3 -c "<repair script>" && cd <data_dir> && /usr/bin/python3 <scan_script>
 ```
 Two separate calls WILL fail. The suffix reappears on EVERY OAuth refresh — repair is mandatory before every scan, not a one-time fix.
 
-**Combined repair script** (run before every scan — dispatch or cron):
-
-```bash
-python3 -c "
-import json, time, re, os
-from pathlib import Path
-cred_dir = Path(os.environ.get('GOOGLE_MCP_CREDENTIALS',
-                               Path.home() / '.google_workspace_mcp/credentials'))
-for path in sorted(cred_dir.glob('*.json')):
-    email = path.stem
-    with open(path) as f: d = json.load(f)
-    expiry = d.get('expiry', '')
-    if isinstance(expiry, float):
-        d['expiry'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time() + 3600))
-    elif isinstance(expiry, str):
-        s = expiry
-        if '+' in s: s = s[:s.index('+')]
-        elif s.endswith('Z'): s = s[:-1]
-        if '.' in s: s = s[:s.index('.')]   # strip fractional seconds (e.g. '.151160')
-        if s != expiry:
-            d['expiry'] = s
-            with open(path, 'w') as f: json.dump(d, f, indent=2)
-            print('repaired', email, repr(expiry), '->', s)
-"
-```
-
-> Five failure modes are now handled: float expiry, `+00:00`/`Z` suffix,
-> **microsecond suffix (`.811606`)**, **numeric-string expiry**, and
-> **microsecond+fraction+Z combo (`.151160Z`)** — the latter is not matched
-> by the `+`/`Z` check alone (the `.` stripping handles it). Confirmed real
-> on 2026-07-15 (operator token) and 2026-07-27 (mx.indigo token).
+**Combined repair script:** use the hardened script in `references/token-repair.md` — it handles all five modes above, including the ordering-sensitive microsecond+Z combo. Do not hand-roll a partial fix.
 ## Command Pattern
 
 ```bash

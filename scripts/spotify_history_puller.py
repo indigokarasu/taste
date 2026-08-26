@@ -4,6 +4,13 @@ Spotify Recently Played Tracker
 Fetches recently played tracks from Spotify API and outputs JSON.
 Requires SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, and SPOTIFY_REFRESH_TOKEN environment variables.
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Pull recent Spotify listening history into music ConsumptionSignals.')
+    print("Usage: spotify_history_puller.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import os
 import json
 import requests

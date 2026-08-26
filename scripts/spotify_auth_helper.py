@@ -26,6 +26,13 @@ Requires: SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI
 (env vars, read from the profile .env). REDIRECT_URI must match the Spotify
 app's registered redirect URI (currently http://localhost:8888/callback).
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Refresh Spotify OAuth token and persist SPOTIFY_REFRESH_TOKEN.')
+    print("Usage: spotify_auth_helper.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import os
 import sys
 import time

@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Styx-safe dispatch dedup; refuses to drop Styx-sourced signals.')
+    print("Usage: safe_taste_dedup.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import os
 """Safe Taste signal dedup — preserves Styx signals (which use `date`, not `event_date`).
 

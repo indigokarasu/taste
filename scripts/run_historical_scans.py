@@ -2,6 +2,13 @@
 """
 Script to run historical email and calendar scans with the operator's credentials.
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Run historical email/calendar backfill scans for taste signals.')
+    print("Usage: run_historical_scans.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import os
 import sys

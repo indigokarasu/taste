@@ -14,6 +14,13 @@ auth helper writes to a file while the puller expects an env var.
 Usage:
   python3 apply_spotify_token_to_env.py
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Apply Spotify OAuth token into the environment/env file.')
+    print("Usage: apply_spotify_token_to_env.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import json
 import re
 import os

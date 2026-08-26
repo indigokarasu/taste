@@ -16,6 +16,13 @@ item per given place_id.
 A successful ingestion SCRIPT return ("N created") is NOT proof of integrity. This
 script is the proof. Status is testimony, not action.
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Verify Styx delta write integrity: place_id collisions, item dupes, orphaned signals.')
+    print("Usage: verify_taste_delta.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import json
 import sys
 import collections
