@@ -11,6 +11,13 @@ taste_full_enrich.py — Comprehensive restaurant extraction and enrichment.
 Usage:
     python3 taste_full_enrich.py [--dry-run] [--limit N]
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Full pipeline: email/calendar scan + Styx delta + enrichment of unenriched items.')
+    print("Usage: taste_full_enrich.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import json
 import os

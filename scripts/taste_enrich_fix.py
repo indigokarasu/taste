@@ -17,6 +17,13 @@ Usage:
 Confirmed working 2026-06-26: enriched The Butcher's Son and Hard Knox Cafe
 after taste_full_enrich.py reported success but failed to persist.
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Re-enrich items via legacy Places GET API and persist enriched: true.')
+    print("Usage: taste_enrich_fix.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import json
 import os

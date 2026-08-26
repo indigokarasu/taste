@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Corrected daily Styx->Taste delta ingestion with place_id linking.')
+    print("Usage: styx_delta_corrected.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 import os
 """Styx -> Taste daily delta (CORRECTED, 2026-07-22).
 

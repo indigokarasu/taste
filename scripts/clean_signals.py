@@ -8,6 +8,13 @@ aren't real venue names. Writes the cleaned set back to the same JSONL file.
 Usage:
     python scripts/clean_signals.py /path/to/signals.jsonl
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Remove generic meal titles and deduplicate signals.jsonl.')
+    print("Usage: clean_signals.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import json
 import re

@@ -6,6 +6,13 @@ taste_cleanup_and_enrich.py — Clean up remaining unenriched items.
 2. Strip location suffixes from venue names for better Google matching
 3. Retry enrichment for remaining items
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Cross-source signal dedup plus retry of failed enrichments.')
+    print("Usage: taste_cleanup_and_enrich.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import json
 import os

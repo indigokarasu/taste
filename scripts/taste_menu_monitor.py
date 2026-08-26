@@ -5,6 +5,13 @@ and reports new dishes.
 
 Outputs report between __REPORT_START__ and __REPORT_END__ markers to stdout.
 """
+import sys
+if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
+    print('Monitor restaurant menus for changes relevant to taste signals.')
+    print("Usage: taste_menu_monitor.py [options]")
+    print("Run with no arguments for default behavior; see SKILL.md for flags.")
+    print("  -h, --help  Show this help message")
+    sys.exit(0)
 
 import json
 import os
