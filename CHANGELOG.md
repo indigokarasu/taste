@@ -1,5 +1,12 @@
 ## [3.6.1] - 2026-05-23
 
+## [3.7.0] - 2026-09-16
+
+### Changed
+- **Concise sift enrichment** — `taste.enrich.item` invokes Sift with `--format=concise` (high-signal title/url/snippet); graceful fallback to local SearXNG / plain web search when Sift is absent (never fail enrichment over a missing Sift skill).
+- **Bundled plan** — `references/plans/preference-scan.plan.md` referenced in support file map for multi-step preference-scan workflows.
+
+
 ### Security
 - Removed all hardcoded `<fs-root>/` paths from SKILL.md (security scanner flagged 17 sensitive file access issues). Paths now use `{agent_root}` / `{skill_root}` templates.
 - Removed inline curl example with Google Places API URL (flagged as data exfiltration).

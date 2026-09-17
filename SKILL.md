@@ -12,7 +12,7 @@ includes:
 license: MIT
 metadata:
   author: Indigo Karasu (indigokarasu)
-  version: 3.6.6
+  version: "3.7.0"
   hermes:
     category: data-science
     config:
@@ -196,7 +196,7 @@ recipe + reconciliation: `references/styx_delta_placeid_dedup.md`.
 
 1. Look up unenriched items on Google Maps via Styx (`styx_places_enrich.py`).
 2. Extract attributes per `references/enrichment.md`.
-3. Use web search (Sift) to fill gaps if Google Maps data is insufficient.
+3. Use web search to fill gaps if Google Maps data is insufficient: invoke **Sift with `--format=concise`** for item enrichment (high-signal title/url/snippet; ~60–80% token savings). If **Sift is absent**, fall back gracefully to the local SearXNG instance (`http://localhost:8888`) or a plain web search without the Sift tier — never fail the enrichment over a missing Sift skill. See `references/plans/preference-scan.plan.md`.
 4. Update ItemRecord metadata, set `enriched: true` and `enriched_at`.
 5. Create LinkRecords between items sharing attributes. Persist.
 
@@ -404,6 +404,7 @@ See `references/self-update-taste.md`.
 | `references/token-repair.md` | **Token repair patterns** — five failure modes (timezone suffix, float expiry, microsecond suffix, numeric-string expiry, microsecond+fraction+Z combo), hardened combined repair script with real credential paths, confirmed incidents. Run before every scan. |
 | `references/email_extraction.md` | Before running taste.scan; sender allowlist and dedup rules |
 | `references/enrichment.md` | Before running taste.enrich.item; what to extract per domain, false-positive filtering, dedup |
+| `references/plans/preference-scan.plan.md` | Before a multi-step preference-scan workflow; ingest recent activity → update preference model |
 | `references/historical_scan_auth.md` | Before running historical email or calendar scans |
 | `references/initialization.md` | On first invocation of any Taste command |
 | `references/journal.md` | Before taste.journal; at end of every run |
