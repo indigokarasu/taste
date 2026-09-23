@@ -81,7 +81,7 @@ Taste does not own: web research (Sift), social graph (Weave), pattern analysis,
 
 ## Ontology types
 
-Taste works with these types from `spec-ocas-ontology.md`:
+Taste works with these types from [[`spec-ocas-ontology.md` ⚠️ Pending spec] ⚠️ Pending spec — not yet authored]:
 
 - **Place** — venues (restaurants, cafes, bars, retail, entertainment spaces). Extracted from consumption events; enriched via Google Maps or Sift.
 - **Thing/DigitalArtifact** — consumed media items (articles, videos, podcasts, books, albums). Stored as ItemRecords.
@@ -89,7 +89,7 @@ Taste works with these types from `spec-ocas-ontology.md`:
 - **Concept/Idea** — cuisines, genres, categories, and other taste dimensions.
 - **Entity/Person** — chefs, artists, creators, and other individuals the user likes or follows.
 
-Taste maintains its own preference model in `{agent_root}/commons/data/ocas-taste/`. See `spec-ocas-shared-schemas.md` for ConsumptionSignal and ItemRecord schemas.
+Taste maintains its own preference model in `{agent_root}/commons/data/ocas-taste/`. See [[`spec-ocas-shared-schemas.md` ⚠️ Pending spec] ⚠️ Pending spec — not yet authored] for ConsumptionSignal and ItemRecord schemas.
 
 ## Commands
 
