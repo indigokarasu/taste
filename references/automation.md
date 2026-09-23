@@ -14,6 +14,6 @@
 
 ## Backup
 
-All taste and styx data is backed up to GitHub LFS (`indigo-repo`): `data/styx.db`, `data/ocas-taste-*.jsonl`, `data/chronicle.lbug`, `data/weave.lbug`, `data/transactions.db`, `data/chroma.sqlite3`. LFS tracks: `*.jsonl`, `*.db`, `*.lbug`, `*.sqlite3`, `*.tar.gz`.
+All taste and styx data is backed up to GitHub LFS (`indigo-repo`): `data/styx.db`, `data/ocas-taste-*.jsonl`, `data/chronicle.lbug`, `data/weave.lbug`, `data/transactions.db`, `data/the vector store`. LFS tracks: `*.jsonl`, `*.db`, `*.lbug`, `*.sqlite3`, `*.tar.gz`.
 
 ⚠️ `state.db` is SKIPPed in backup — too large for GitHub.
