@@ -26,7 +26,7 @@ Usage:
 """
 import sqlite3, json, re, sys, time, uuid, collections, urllib.request, urllib.parse
 
-STYX = os.path.expanduser("~/indigo-repo/data/styx.db")
+STYX = os.path.expanduser("~/.hermes/data/styx.db")
 TXN = os.path.expanduser("~/.hermes/data/transactions.db")
 DATA = os.path.expanduser("~/.hermes/commons/data/ocas-taste")
 ITEMS = DATA + '/items.jsonl'
