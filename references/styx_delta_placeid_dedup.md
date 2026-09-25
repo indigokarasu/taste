@@ -39,8 +39,8 @@ duplicate `source=styx` signals, and (optionally) exactly-one-item-per expected
    repairs pre-existing orphans at the same venue).
 5. Re-run `verify_taste_delta.py` until it exits 0.
 
-### Gotcha — this is NOT `fix_styx_dedup.py`
-`scripts/fix_styx_dedup.py` targets **truncation-variant** duplicates (different Styx
-names -> same place). The `place_id`-sibling duplicate (same place, duplicate `item_id`
-or a wrong-place sibling record) is a different shape — use the verify + manual-reconcile
-recipe above, not `fix_styx_dedup` alone.
+### Gotcha — this is NOT a truncation-variant merge
+Truncation-variant duplicates (different Styx names → same place) are a **different
+shape** from the `place_id`-sibling duplicate (same place, duplicate `item_id` or a
+wrong-place sibling record). Use the verify + manual-reconcile recipe above for the
+sibling case; a name-only merge will not catch it.

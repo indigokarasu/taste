@@ -39,11 +39,11 @@ import time
 import json
 import argparse
 import urllib.parse
-import webbrowser
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-import requests
+# NOTE: `webbrowser`, `http.server` and `requests` are imported LAZILY inside the
+# functions that use them. Module-scope imports of non-stdlib / venv-only deps
+# break `--help` (and every other flag) on machines that lack them.
 
 HERMES_HOME = Path(os.environ.get("HERMES_HOME") or os.environ.get("HERMES_HOME", os.path.join(os.path.expanduser("~"), ".hermes", "profiles", "indigo")))
 TOKEN_FILE = HERMES_HOME / "commons/data/ocas-taste/music/spotify_token.json"
@@ -79,7 +79,19 @@ def build_authorize_url(client_id, redirect_uri, state):
     return AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params)
 
 
+def _requests():
+    """Import `requests` lazily (exit 3 with a clear message if absent)."""
+    try:
+        import requests
+    except ImportError as e:
+        print("ERROR: the 'requests' package is required for the token exchange (%s)." % e,
+              file=sys.stderr)
+        sys.exit(3)
+    return requests
+
+
 def exchange_code(code, client_id, client_secret, redirect_uri):
+    requests = _requests()
     resp = requests.post(
         TOKEN_ENDPOINT,
         data={
@@ -137,6 +149,9 @@ def run_manual(client_id, client_secret, redirect_uri):
 
 
 def run_auto(client_id, client_secret, redirect_uri):
+    import webbrowser
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
     state = os.urandom(8).hex()
     url = build_authorize_url(client_id, redirect_uri, state)
     captured = {}

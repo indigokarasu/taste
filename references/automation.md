@@ -6,7 +6,7 @@
 |-----|------|------|
 | `plaid-transaction-sync` | 07:00 | Pulls new bank transactions into styx.db |
 | `styx:enrich-new-transactions` | 07:30 | Enriches new styx merchants via Google Places |
-| `taste:daily-styx-enrichment` | 08:00 | Full pipeline: styx_places_enrich → taste_full_enrich → taste_signals_dedup |
+| `taste:daily-styx-enrichment` | 08:00 | Full pipeline: styx_places_enrich → taste_full_enrich → safe_taste_dedup |
 | `taste:historical-email` | 09:02 | Scans email for restaurant reservations/deliveries |
 | `taste:historical-calendar` | 10:10 | Scans calendar for restaurant/hotel events |
 | `taste:scan` | 13:12 | Daily email/calendar scan + Styx→Taste delta ingestion |

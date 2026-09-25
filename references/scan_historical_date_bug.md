@@ -43,10 +43,12 @@ except Exception:
 tz formats. After fixing, re-run `scan-historical` cleanly.
 
 ## Dedup incompatibility (related)
-`taste_signals_dedup.py`'s `signal_key` reads `name`/`normalized_name`, but scan
-signals use `venue_name` (no `name`/`normalized_name`). All scan signals get an empty
-venue key and are **SKIPPED** — the tool reports a false "0 dupes" on `--dry-run`.
-So even correctly-dated scan output won't dedup against the existing set.
+Any dedup key that reads `name`/`normalized_name` skips scan signals (they use
+`venue_name`), so it reports a false "0 dupes" on `--dry-run`. Use the
+schema-aware tools instead: `clean_signals.py` keys on
+`(venue_name, event_date[:10], extraction_source, domain)` and
+`safe_taste_dedup.py` keys on `(extraction_source, venue_name, event_date or date)`.
+Never trust a "0 dupes" count from a key that reads fields scan signals don't have.
 
 ## If you already ran a bad scan (revert recipe)
 The scan **appends** new signals to the end of `signals.jsonl`. To revert:
@@ -59,6 +61,9 @@ The scan **appends** new signals to the end of `signals.jsonl`. To revert:
    item) is low-impact; recommendations key off `signals.jsonl`. Leave unless scrubbing.
 
 ## Preferred path for historical coverage
-Use `scripts/taste_backfill_v2.py` — the skill's designated historical backfill. It
-scans Gmail + Calendar in monthly chunks with food/venue filtering and emits
-correctly-dated signals (the existing 5,133-signal dataset was produced this way).
+No bundled backfill script ships with this skill. The supported path is:
+1. Patch the parse above (`email.utils.parsedate_to_datetime()`) in `taste_scan.py`.
+2. Run `taste_scan.py scan-historical N` (email) / `taste_scan.py scan-calendar N`
+   (calendar) in bounded chunks, with food/venue filtering for calendar events.
+3. Dedup with `scripts/safe_taste_dedup.py` (Styx-safe) and verify counts directly —
+   never trust a tool's "0 dupes" line alone.

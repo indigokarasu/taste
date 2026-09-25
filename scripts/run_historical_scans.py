@@ -23,12 +23,23 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     print((__doc__ or "").strip() or "Usage: python3 run_historical_scans.py")
     sys.exit(0)
 
-from google_auth import get_gmail_service, get_calendar_service
+def _auth():
+    """Import the shared google_auth helpers lazily (exit 3 if unavailable).
 
+    Module-scope import would break `--help` on machines without the Hermes tree.
+    """
+    try:
+        from google_auth import get_gmail_service, get_calendar_service
+    except Exception as e:  # environment dependent
+        print("ERROR: google_auth helper unavailable (%s)." % e, file=sys.stderr)
+        print("AGENT_ROOT must point at a tree containing scripts/google_auth.py.", file=sys.stderr)
+        sys.exit(3)
+    return get_gmail_service, get_calendar_service
 
 
 def run_historical_scans():
     """Run the historical email and calendar scans with the operator's credentials."""
+    get_gmail_service, get_calendar_service = _auth()
     gmail_service = get_gmail_service(account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
     calendar_service = get_calendar_service(account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
 

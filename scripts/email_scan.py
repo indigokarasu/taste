@@ -18,7 +18,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Any
 
-# Auth
+# Auth. The shared google_auth helper lives in the agent root's scripts/ dir
+# and is imported LAZILY: it is absent on machines without the Hermes tree, and
+# a module-scope import would break `--help` (exit before argparse) there.
 AGENT_ROOT = Path(os.environ.get("AGENT_ROOT", Path.home() / ".hermes"))
 sys.path.insert(0, str(AGENT_ROOT / 'scripts'))
 
@@ -27,14 +29,30 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     print((__doc__ or "").strip() or "Usage: python3 email_scan.py")
     sys.exit(0)
 
-from google_auth import get_service
+OPERATOR_ACCOUNT = os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com")
 
 
-service = get_service('gmail', 'v1', ['https://www.googleapis.com/auth/gmail.modify'], account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
+def _google_auth():
+    """Import the shared google_auth helper lazily (exit 3 if unavailable)."""
+    try:
+        from google_auth import get_service
+    except Exception as e:  # environment dependent
+        print("ERROR: google_auth helper unavailable (%s)." % e, file=sys.stderr)
+        print("AGENT_ROOT must point at a tree containing scripts/google_auth.py.", file=sys.stderr)
+        sys.exit(3)
+    return get_service
+
+
+def get_gmail_service():
+    """Get authenticated Gmail service."""
+    get_service = _google_auth()
+    return get_service('gmail', 'v1', ['https://www.googleapis.com/auth/gmail.modify'], account=OPERATOR_ACCOUNT)
+
 
 def get_calendar_service():
     """Get authenticated Calendar service."""
-    return get_service('calendar', 'v3', ['https://www.googleapis.com/auth/calendar'], account=os.environ.get("OCAS_OPERATOR_EMAIL", "operator@example.com"))
+    get_service = _google_auth()
+    return get_service('calendar', 'v3', ['https://www.googleapis.com/auth/calendar'], account=OPERATOR_ACCOUNT)
 
 def normalize_venue_name(name: str) -> str:
     """Normalize venue name for deduplication."""

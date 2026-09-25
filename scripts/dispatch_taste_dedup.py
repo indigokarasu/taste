@@ -3,7 +3,7 @@
 Dispatch-wave dedup script for ocas-taste.
 
 Removes duplicate signals that arise when multiple dispatch waves re-scan the
-same time window. Uses a broader key than taste_signals_dedup.py:
+same time window. Uses a broader key than a strict signal_id/timestamp dedup:
   (venue_name, event_date[:10], extraction_source)
 
 Usage:

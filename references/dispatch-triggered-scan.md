@@ -58,9 +58,9 @@ python3 -c "<repair script>" && cd <hermes-home>/profiles/indigo/commons/data/oc
 
 ## Post-Scan Dedup (REQUIRED After Every Dispatch Scan)
 
-**Problem:** Multiple dispatch waves re-scanning the same 24h window create duplicate signals. The built-in `taste_signals_dedup.py` uses a strict key (exact signal_id or near-identical timestamps) and does NOT catch dispatch-wave duplicates which have different `signal_id` and `created_at` values but identical `(venue_name, event_date[:10], extraction_source)`.
+**Problem:** Multiple dispatch waves re-scanning the same 24h window create duplicate signals. A strict-key dedup (exact signal_id or near-identical timestamps — the retired `taste_signals_dedup.py` worked this way) does NOT catch dispatch-wave duplicates which have different `signal_id` and `created_at` values but identical `(venue_name, event_date[:10], extraction_source)`.
 
-**Confirmed 2026-06-25:** 36 duplicate "Next Level VG" signals accumulated from repeated dispatch waves. `taste_signals_dedup.py` found 0 duplicates (strict key missed them). Manual dedup with key `(venue_name, event_date[:10], extraction_source)` removed 74 duplicates (4777 → 4703).
+**Confirmed 2026-06-25:** 36 duplicate "Next Level VG" signals accumulated from repeated dispatch waves. The strict-key tool found 0 duplicates (its key missed them). Manual dedup with key `(venue_name, event_date[:10], extraction_source)` removed 74 duplicates (4777 → 4703).
 
 **Dedup script (run after every dispatch-triggered scan):**
 ```bash

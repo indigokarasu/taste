@@ -22,14 +22,14 @@ Source priority (keep highest):
 ## Script
 
 ```bash
-python3 <hermes-home>/commons/data/ocas-taste/scripts/taste_signals_dedup.py
+python3 <hermes-home>/profiles/indigo/skills/ocas-taste/scripts/clean_signals.py <data-dir>/signals.jsonl
 ```
 
-The script:
-1. Groups signals by `(normalized_name, first_seen date)`
-2. For groups with multiple signals, keeps the one with highest source priority
-3. Removes duplicates from `signals.jsonl`
-4. Reports counts before/after
+`clean_signals.py` groups signals by `(venue_name, event_date, extraction_source, domain)`,
+keeps the highest-priority source per group, drops generic meal titles, and rewrites
+`signals.jsonl` in place. For Styx-bearing stores use `safe_taste_dedup.py` instead — it
+keys on `(venue_name, (event_date or date)[:10], extraction_source)` and refuses to write
+if the Styx count would drop.
 
 ## When to run
 

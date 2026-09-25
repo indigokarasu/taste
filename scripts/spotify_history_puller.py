@@ -13,9 +13,11 @@ if __name__ == "__main__" and ("--help" in sys.argv or "-h" in sys.argv):
     sys.exit(0)
 import os
 import json
-import requests
 from datetime import datetime, timedelta
 import sys
+
+# NOTE: `requests` is imported LAZILY inside the functions below. A module-scope
+# import of a non-stdlib dep breaks `--help` on machines that lack it.
 
 _HELP_ARGS = {"--help", "-h"}
 if set(sys.argv[1:]) & _HELP_ARGS:
@@ -23,8 +25,19 @@ if set(sys.argv[1:]) & _HELP_ARGS:
     sys.exit(0)
 
 
+def _requests():
+    """Import `requests` lazily (exit 3 with a clear message if absent)."""
+    try:
+        import requests
+    except ImportError as e:
+        print(f"ERROR: the 'requests' package is required ({e}).", file=sys.stderr)
+        sys.exit(3)
+    return requests
+
+
 def get_access_token():
     """Exchange refresh token for access token."""
+    requests = _requests()
     client_id = os.getenv("SPOTIFY_CLIENT_ID")
     client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
     refresh_token = os.getenv("SPOTIFY_REFRESH_TOKEN")
@@ -67,6 +80,7 @@ def get_access_token():
 
 def get_recently_played(access_token, limit=50):
     """Fetch recently played tracks."""
+    requests = _requests()
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(
         "https://api.spotify.com/v1/me/player/recently-played",

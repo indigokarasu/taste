@@ -104,7 +104,7 @@ When the same restaurant appears via multiple sources (email + calendar + styx) 
 
 Source priority (keep highest): `styx` > `styx_places` > `calendar` > `email` > `enrichment`
 
-Run: `python3 scripts/taste_signals_dedup.py`
+Run: `python3 scripts/clean_signals.py <data-dir>/signals.jsonl`
 
 ## Re-enrichment
 

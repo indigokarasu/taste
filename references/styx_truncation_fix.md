@@ -36,13 +36,13 @@ truncated Styx name) not item_id for linkage. The item-signal graph is broken.
 After creating canonical items, update all signals to set item_id to the
 canonical item_id where venue_name matches any variant.
 
-## Cleanup Script
+## Cleanup Procedure
 
-scripts/fix_styx_dedup.py handles the merge:
-- Groups items by canonical name + address
-- Merges signal counts, spend, visit dates
-- Deduplicates signals by (item_id, date, source)
-- Always run with --dry-run first
+No one-shot cleanup script ships with this skill — do the merge inline:
+- Group items by canonical name + address
+- Merge signal counts, spend, visit dates
+- Deduplicate signals by (item_id, date, source)
+- Back up both JSONL files first; `styx_delta_corrected.py` self-heals orphans on the daily run
 
 ## Prevention
 
