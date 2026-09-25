@@ -2,3 +2,11 @@ __pycache__/
 *.pyc
 .env
 *.log
+
+# Runtime data directories — real content must never be committed (2026-09-24:
+# caught an untracked journal file with real spend totals + venue/date history
+# before it was ever added; the tracked commons/*/ocas-taste paths are empty
+# scaffolding only, never populate them either).
+journal/
+commons/data/ocas-taste/*.jsonl
+commons/journals/ocas-taste/
