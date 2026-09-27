@@ -13,6 +13,7 @@ import json
 import os
 import re
 import uuid
+from email.utils import parsedate_to_datetime
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -357,11 +358,15 @@ class TasteSkill:
             from_addr = headers.get('From', '')
             date_str = headers.get('Date', '')
 
-            # Parse date
+            # Parse date — parsedate_to_datetime handles RFC-2822 variants that the
+            # rigid strptime rejected, which stamped every signal with the scan time
+            # and destroyed temporal decay (see references/scan_historical_date_bug.md).
             try:
-                email_date = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
-            except:
-                email_date = datetime.now()
+                email_date = parsedate_to_datetime(date_str)
+                if email_date is None:
+                    email_date = datetime.now(timezone.utc)
+            except Exception:
+                email_date = datetime.now(timezone.utc)
 
             # Get email body
             body = self._get_email_body(msg_data['payload'])

@@ -81,8 +81,20 @@ def main():
                      + (f" (+{len(orphans)-5} more)" if len(orphans) > 5 else ""))
 
     # 4) (merchant_name, date) dupes among source=styx
-    k = collections.Counter((s.get("merchant_name"), s.get("date"))
-                            for s in sigs if s.get("source") == "styx")
+    # Legacy styx signals carry venue/date only in `dedup_key` ("styx:{name}:{date}");
+    # without the fallback they all collapse to (None, None) and 306 rows look like
+    # one false duplicate. Parse the key when the fields are absent.
+    def _mkey(s):
+        m, d = s.get("merchant_name"), s.get("date")
+        if m is None and d is None:
+            dk = s.get("dedup_key") or ""
+            if dk.startswith("styx:"):
+                parts = dk[len("styx:"):].rsplit(":", 1)
+                if len(parts) == 2:
+                    return (parts[0], parts[1])
+        return (m, d)
+
+    k = collections.Counter(_mkey(s) for s in sigs if s.get("source") == "styx")
     sdup = [x for x, c in k.items() if c > 1]
     if sdup:
         errors.append(f"duplicate (merchant,date) styx signals: {sdup}")
