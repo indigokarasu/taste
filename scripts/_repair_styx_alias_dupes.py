@@ -17,11 +17,31 @@ from collections import defaultdict
 from pathlib import Path
 
 
+
+def _usage():
+    """--help must not touch the data dir.
+
+    tests/test_script_help.py runs every scripts/*.py with --help and requires
+    exit 0. main() reads sys.argv[1] as the data dir, so --help was consumed as
+    a path and the script died on open('--help/signals.jsonl') before printing
+    anything. The contract this pins is that a fresh agent can ask for help
+    without a data dir and without a traceback.
+    """
+    print(__doc__.strip())
+    print("\nusage: %s <data-dir> [--apply]\n" % __file__.rsplit("/", 1)[-1])
+    return 0
+
 def norm(x):
     return ''.join(ch for ch in str(x or '').lower() if ch.isalnum())
 
 
 def main():
+    if any(a in ('-h', '--help') for a in sys.argv[1:]):
+        return _usage()
+    if len(sys.argv) < 2:
+        print(__doc__.strip())
+        print("\nusage: %s <data-dir> [--apply]\n" % __file__.rsplit('/', 1)[-1])
+        return 2
     data_dir = Path(sys.argv[1])
     apply = '--apply' in sys.argv
     sig_path = data_dir / 'signals.jsonl'
