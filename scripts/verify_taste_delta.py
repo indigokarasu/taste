@@ -84,15 +84,25 @@ def main():
     # Legacy styx signals carry venue/date only in `dedup_key` ("styx:{name}:{date}");
     # without the fallback they all collapse to (None, None) and 306 rows look like
     # one false duplicate. Parse the key when the fields are absent.
+    # A merchant can legitimately charge twice in one day (two visits, two cards).
+    # Only treat as duplicate when the transaction itself matches, so prefer
+    # transaction_id and fall back to the dedup_key's trailing discriminator.
     def _mkey(s):
         m, d = s.get("merchant_name"), s.get("date")
+        txn = s.get("transaction_id")
+        if txn:
+            return (m or s.get("venue_name"), d, txn)
+        dk = s.get("dedup_key") or ""
+        if dk.startswith("styx:"):
+            rest = dk[len("styx:"):]
+            stem, _, disc = rest.rpartition(":")
+            if stem and disc and not disc[:4].isdigit():
+                return (stem, d, disc)   # transaction-scoped key
         if m is None and d is None:
-            dk = s.get("dedup_key") or ""
-            if dk.startswith("styx:"):
-                parts = dk[len("styx:"):].rsplit(":", 1)
-                if len(parts) == 2:
-                    return (parts[0], parts[1])
-        return (m, d)
+            parts = dk[len("styx:"):].rsplit(":", 1) if dk.startswith("styx:") else []
+            if len(parts) == 2:
+                return (parts[0], parts[1])
+        return (m, d, None)
 
     k = collections.Counter(_mkey(s) for s in sigs if s.get("source") == "styx")
     sdup = [x for x, c in k.items() if c > 1]
