@@ -89,9 +89,14 @@ def main():
     # transaction_id and fall back to the dedup_key's trailing discriminator.
     def _mkey(s):
         m, d = s.get("merchant_name"), s.get("date")
-        txn = s.get("transaction_id")
+        # Styx writes the transaction id under metadata.transaction_id; older rows
+        # use a bare top-level field. Without the metadata fallback every such row
+        # keys as (None, date, None), so two DIFFERENT venues charged on the same
+        # day (e.g. Piccino + Marcella's on 2026-10-01) collapse into one false
+        # duplicate and mask the real violations behind it.
+        txn = s.get("transaction_id") or (s.get("metadata") or {}).get("transaction_id")
         if txn:
-            return (m or s.get("venue_name"), d, txn)
+            return (m or s.get("venue_name") or s.get("merchant_name"), d, txn)
         dk = s.get("dedup_key") or ""
         if dk.startswith("styx:"):
             rest = dk[len("styx:"):]
