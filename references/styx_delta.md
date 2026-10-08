@@ -39,6 +39,15 @@ Before enriching, load existing items and signal dedup keys:
 - **Signal dedup**: check `signals.jsonl` for domain=food + source=styx, match on `dedup_key` (format: `styx:{merchant_lower}:{date[:10]}`)
 - Only process rows where BOTH the item name is new AND the dedup key is new
 
+**⚠️ Normalize before comparing, and read the date out of `dedup_key` when the field is null.**
+Stored `dedup_key`s are written **un-normalized** (`styx:sourdough & co:2026-09-21`) while a
+candidate's key is normalized (`styx:sourdough&co:2026-09-21`); a raw-string comparison never
+matches. Separately, ~306 legacy rows carry `date: None` with the real date only inside
+`dedup_key`, so a `(name, s['date'][:10])` key collapses them to `('name','')`. Either defect
+makes an already-ingested purchase look new. Build the held-set as normalized `(name, date)`
+pairs, deriving the date from `dedup_key` when the field is absent (the `_sig_date` /
+`_sig_names` helpers in `styx_delta_corrected.py`).
+
 ### 3. Group by unique merchant
 
 Multiple transactions may be for the same merchant (repeat visits). Group by `merchant_name.lower()` to:

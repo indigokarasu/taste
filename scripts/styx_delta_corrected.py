@@ -51,17 +51,62 @@ for it in items:
     if nm:
         items_by_name[nm].append(it)
 
-SIG_DEDUP = set(s.get('dedup_key', '') for s in signals if s.get('source') == 'styx')
-SIG_NAME_DATE = set((s.get('merchant_name', '').lower().strip(), s.get('date', '')[:10])
-                    for s in signals if s.get('source') == 'styx')
+def norm(n):
+    return re.sub(r'[^a-z0-9]', '', (n or '').lower())
+
+
+def _sig_date(s):
+    """Signal date, falling back to the date embedded in dedup_key.
+
+    Legacy styx rows carry date=None with the real date only inside the
+    dedup_key ('styx:<name>:<YYYY-MM-DD>'); reading s['date'] alone makes them
+    invisible to the (name, date) dedup, so a purchase ingested weeks ago is
+    reported as new and written a second time.
+    """
+    d = s.get('date') or s.get('raw_date')
+    if d:
+        return str(d)[:10]
+    dk = s.get('dedup_key') or ''
+    if dk.startswith('styx:'):
+        tail = dk.rsplit(':', 1)[-1]
+        if len(tail) >= 10 and tail[:4].isdigit():
+            return tail[:10]
+    return ''
+
+
+def _sig_names(s):
+    """Every normalized name a stored styx signal can be known by."""
+    names = set()
+    for f in ('merchant_name', 'venue_name'):
+        if s.get(f):
+            names.add(norm(s[f]))
+    dk = s.get('dedup_key') or ''
+    if dk.startswith('styx:'):
+        stem = dk[len('styx:'):].rsplit(':', 1)[0]
+        if stem:
+            names.add(norm(stem))
+    return names
+
+
+# Dedup sets are NORMALIZED: stored dedup_key merchant segments are written
+# un-normalized ('styx:sourdough & co:2026-09-21'), while the candidate key is
+# 'styx:sourdough&co:...'. Comparing raw strings reports already-ingested
+# purchases as new. Key on normalized name + date, and derive the date from
+# dedup_key when the row's date field is absent.
+SIG_DEDUP = set()
+SIG_NAME_DATE = set()
+for _s in signals:
+    if _s.get('source') != 'styx':
+        continue
+    _d = _sig_date(_s)
+    for _n in _sig_names(_s):
+        if _n:
+            SIG_DEDUP.add((_n, _d))
+            SIG_NAME_DATE.add((_n, _d))
 
 FOOD_CATS = ('restaurant', 'cafe', 'bar', 'food', 'bakery', 'meal_takeaway', 'meal_delivery')
 BLOCKLIST = {'doordash', 'walgreens', 'cvs', 'postmates', 'ubereats', 'uber eats',
              'grubhub', 'lyft', 'uber', 'seamless', 'caviar'}
-
-
-def norm(n):
-    return re.sub(r'[^a-z0-9]', '', (n or '').lower())
 
 
 def enrich(merchant_name, city):
@@ -109,10 +154,10 @@ for (txn_id, raw_name, amount, date, pfc, mname, mcat, mcity, conf, loc_city, lo
     if ml in BLOCKLIST:
         continue
     date10 = date[:10]
-    dkey = f"styx:{norm(mname)}:{date10}"
-    if dkey in SIG_DEDUP or (ml, date10) in SIG_NAME_DATE:
+    nm = norm(mname)
+    if (nm, date10) in SIG_DEDUP or (nm, date10) in SIG_NAME_DATE:
         continue
-    ukey = (norm(mname), date10)
+    ukey = (nm, date10)
     if ukey in seen:
         continue
     seen.add(ukey)
