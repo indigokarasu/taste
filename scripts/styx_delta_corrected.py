@@ -246,6 +246,7 @@ for c in candidates:
             item['types'] = enr['types']
         sig['item_id'] = item_id
         new_items.append(item)
+        new_signals.append(sig)
         if pid:
             items_by_place[pid].append(item)
         items_by_name[nname].append(item)
