@@ -24,6 +24,7 @@ exist, and before running the workflow it belongs to.
 | `references/initialization.md` | On first invocation of any Taste command (`taste.init`) |
 | `references/interactive-menu.md` | When invoked interactively — menu structure and response parsing |
 | `references/journal.md` | Before `taste.journal` / at the end of every run — journal format and required fields |
+| `references/menu_url_verification.md` | Before any menu-monitor run, after adding a restaurant, or when `changes=[]` persists — URL verification procedure |
 | `references/multilocation_merge.md` | When merging chain / multi-location venues (locations as metadata) |
 | `references/okrs.md` | During performance review or model-status reporting |
 | `references/plans/preference-scan.plan.md` | Before a multi-step preference-scan workflow (ingest recent activity → update model) |
