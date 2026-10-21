@@ -30,7 +30,7 @@ metadata:
     - consumption-signals
     - OCAS-core
 name: ocas-taste
-source: https://github.com/<agent-handle>/taste
+source: https://github.com/indigokarasu/taste
 tags:
 - preferences
 - recommendations
